@@ -52,7 +52,7 @@ export function adminMediaRoutes({ db, mediaUrl, storage, jwtSecret, publicApiUr
     if (size > rule.max) {
       return c.json({ error: `El archivo supera el límite de ${rule.max / MB} MB.` }, 400)
     }
-    const base = filename.replace(/\.[^.]*$/, '').normalize('NFKD').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+    const base = filename.replace(/\.[^.]*$/, '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
     const objectKey = `projects/${randomUUID()}${base ? `-${base}` : ''}.${rule.ext}`
     const token = await signUpload(jwtSecret, { key: objectKey, contentType, size })
     return c.json({

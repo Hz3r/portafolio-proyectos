@@ -29,6 +29,9 @@ export function createS3Storage(env: Env): Storage {
     endpoint: S3_ENDPOINT,
     region: env.S3_REGION,
     forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
+    // Sin sumas de verificación automáticas: el navegador no las envía al subir con URL firmada.
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
     credentials: { accessKeyId: S3_ACCESS_KEY_ID, secretAccessKey: S3_SECRET_ACCESS_KEY },
   })
   const Bucket = S3_BUCKET
