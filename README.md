@@ -40,7 +40,23 @@ entre ellos:
 | Flujo         | Cómo funciona, paso a paso                            |
 | Documentación | Guías desplegables en Markdown                        |
 
-Los archivos que no se coloquen en ninguna galería aparecen al final.
+Si el proyecto tiene algún bloque de galería, solo se muestran los archivos
+marcados en ellos. Sin ninguno, todos los archivos aparecen en una galería al final.
+
+### Vista rápida y filtros
+
+Al tocar un proyecto en la portada se abre una vista rápida con sus imágenes,
+tecnologías y cifras principales, y un botón para entrar a la historia completa.
+Los filtros muestran las etiquetas más usadas; el resto está en "Más filtros",
+con buscador.
+
+### Ajustes
+
+En **Ajustes** del panel se edita el perfil del sitio (usuario, descripción y
+enlace) y el acceso al panel (correo y contraseña). `ADMIN_EMAIL` y
+`ADMIN_PASSWORD` solo se usan para crear el administrador la primera vez;
+`SITE_HANDLE`, `SITE_TAGLINE` y `SITE_LINK` solo se usan mientras el perfil esté
+vacío.
 
 ### Sonido
 
@@ -60,7 +76,7 @@ docker compose up -d
 # 2. Backend en http://localhost:4000
 cp .env.example .env        # completa JWT_SECRET, ADMIN_EMAIL y ADMIN_PASSWORD
 npm install
-npm run release             # aplica migraciones y crea el administrador
+npm run release             # aplica migraciones y crea el administrador inicial
 npm run dev
 
 # 3. Sitio en http://localhost:4321
@@ -114,9 +130,9 @@ Servicio desde este repositorio con **Root Directory** = `backend`. Genera un do
 | `S3_SECRET_ACCESS_KEY` | Secret key del bucket                                    |
 | `S3_REGION`            | Región del bucket (o `auto`)                             |
 
-En cada despliegue se aplican las migraciones y se crea o actualiza el administrador
-con `ADMIN_EMAIL` y `ADMIN_PASSWORD`. Para cambiar la contraseña, cambia la variable
-y vuelve a desplegar.
+En cada despliegue se aplican las migraciones. El administrador se crea la primera
+vez con `ADMIN_EMAIL` y `ADMIN_PASSWORD`; después el correo y la contraseña se
+cambian desde **Ajustes** en el panel.
 
 ### 4. Servicio `frontend`
 

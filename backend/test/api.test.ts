@@ -249,3 +249,31 @@ describe('historia', () => {
     expect((await admin('PATCH', `/projects/${p.id}`, { repoUrl: 'javascript:alert(1)' })).status).toBe(400)
   })
 })
+
+describe('ajustes', () => {
+  it('el encabezado del sitio se edita desde el panel y se lee en público', async () => {
+    expect(await (await app.request('/site')).json()).toEqual({ handle: '', tagline: '', link: '' })
+    expect((await app.request('/admin/site', json('PATCH', { handle: 'x' }))).status).toBe(401)
+    expect((await admin('PATCH', '/site', { link: 'javascript:alert(1)' })).status).toBe(400)
+    await admin('PATCH', '/site', { handle: '@hz3r', tagline: 'Cosas que construyo' })
+    await admin('PATCH', '/site', { link: 'https://instagram.com/hz3r' })
+    expect(await (await app.request('/site')).json()).toEqual({
+      handle: '@hz3r',
+      tagline: 'Cosas que construyo',
+      link: 'https://instagram.com/hz3r',
+    })
+  })
+
+  it('cambiar correo o contraseña exige la contraseña actual', async () => {
+    expect(await (await admin('GET', '/account')).json()).toEqual({ email: 'admin@test.dev' })
+    expect((await admin('PATCH', '/account', { currentPassword: 'mala', newPassword: 'nueva-clave-1' })).status).toBe(403)
+    expect((await admin('PATCH', '/account', { currentPassword: 'correct-horse', newPassword: 'corta' })).status).toBe(400)
+    expect((await admin('PATCH', '/account', { currentPassword: 'correct-horse', email: 'no-es-correo' })).status).toBe(400)
+
+    const res = await admin('PATCH', '/account', { currentPassword: 'correct-horse', email: 'Nuevo@Test.dev', newPassword: 'nueva-clave-1' })
+    expect(await res.json()).toEqual({ email: 'nuevo@test.dev' })
+    const attempt = (email: string, password: string) => app.request('/auth/login', json('POST', { email, password }))
+    expect((await attempt('admin@test.dev', 'correct-horse')).status).toBe(401)
+    expect((await attempt('nuevo@test.dev', 'nueva-clave-1')).status).toBe(200)
+  })
+})

@@ -35,9 +35,11 @@ const sections = project.sections.filter((s) => {
 })
 const fallback = { TEXT: 'Contexto', MEDIA: 'Galería', METRICS: 'Resultados', FLOW: 'Cómo funciona', DOCS: 'Documentación' }
 
-// Lo que no se colocó en ningún capítulo va a una galería final.
+// Si el proyecto usa bloques de galería, solo se muestra lo marcado en ellos.
+// Sin ninguno, todos los archivos van a una galería final.
 const used = new Set(sections.flatMap((s) => (s.type === 'MEDIA' ? s.mediaIds : [])))
-const loose = project.media.filter((m) => !used.has(m.id) && m.id !== hero?.id)
+const curated = sections.some((s) => s.type === 'MEDIA')
+const loose = curated ? [] : project.media.filter((m) => !used.has(m.id) && m.id !== hero?.id)
 
 const chapters = [
   ...sections.map((s) => ({ id: `c-${s.id}`, title: s.title || fallback[s.type] })),

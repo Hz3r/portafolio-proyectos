@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ProjectEditor from '@/components/ProjectEditor'
 import { admin } from '@/lib/api'
+import { findIcons, ICON_COUNT } from '@/lib/icons'
 import type { Project, Tag } from '@/lib/types'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +22,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       <Link href="/" className="text-dim hover:text-ink inline-block py-2 text-sm">
         <span aria-hidden="true">◀</span> Todos los proyectos
       </Link>
-      <ProjectEditor project={res.data} allTags={tags.ok ? tags.data : []} siteUrl={process.env.SITE_URL ?? null} />
+      <ProjectEditor project={res.data} allTags={tags.ok ? tags.data : []} siteUrl={process.env.SITE_URL ?? null} featured={findIcons('')} iconTotal={ICON_COUNT} />
     </main>
   )
 }

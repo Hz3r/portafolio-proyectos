@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { admin, request, SESSION_COOKIE } from '@/lib/api'
+import { findIcons, type IconHit } from '@/lib/icons'
 import type { Media, Presign, Project, Result, Section, Tag } from '@/lib/types'
 
 export type LoginState = { error: string; email: string } | null
@@ -107,4 +108,19 @@ export async function deleteTag(id: string): Promise<Result> {
   const res = await admin(`/tags/${id}`, { method: 'DELETE' })
   revalidatePath('/tags')
   return res.ok ? { ok: true, data: undefined } : res
+}
+
+/** Busca iconos en la librería completa; se ejecuta en el servidor para no enviarla entera al navegador. */
+export async function searchIcons(query: string): Promise<IconHit[]> {
+  return findIcons(String(query).slice(0, 60))
+}
+
+export type Site = { handle: string; tagline: string; link: string }
+
+export async function updateSite(input: Partial<Site>) {
+  return admin<Site>('/site', { method: 'PATCH', body: input })
+}
+
+export async function updateAccount(input: { currentPassword: string; email?: string; newPassword?: string }) {
+  return admin<{ email: string }>('/account', { method: 'PATCH', body: input })
 }

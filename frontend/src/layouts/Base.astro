@@ -4,7 +4,8 @@ import '@fontsource/silkscreen/400.css'
 import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
 import SoundToggle from '../components/SoundToggle'
-import { site } from '../lib/server'
+import Walkers from '../components/Walkers.astro'
+import { getSite } from '../lib/server'
 
 interface Props {
   title?: string
@@ -12,6 +13,7 @@ interface Props {
   image?: string | null
 }
 
+const site = await getSite()
 const { title, description = site.tagline, image } = Astro.props
 const fullTitle = title ? `${title} | ${site.handle}` : `${site.handle} | Proyectos`
 ---
@@ -33,9 +35,11 @@ const fullTitle = title ? `${title} | ${site.handle}` : `${site.handle} | Proyec
     <ClientRouter />
   </head>
   <body>
+    <div class="stars" aria-hidden="true"><i></i><i></i></div>
     <div class="mx-auto w-full max-w-6xl px-5 pb-24 sm:px-8">
       <slot />
     </div>
+    <Walkers />
     <SoundToggle client:idle transition:persist />
   </body>
 </html>

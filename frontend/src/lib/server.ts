@@ -25,8 +25,20 @@ export async function getProject(slug: string): Promise<Project | null | 'error'
   return status === 404 ? null : 'error'
 }
 
-export const site = {
-  handle: process.env.SITE_HANDLE ?? import.meta.env.SITE_HANDLE ?? 'Proyectos',
-  tagline: process.env.SITE_TAGLINE ?? import.meta.env.SITE_TAGLINE ?? '',
-  link: process.env.SITE_LINK ?? import.meta.env.SITE_LINK ?? '',
+export type Site = { handle: string; tagline: string; link: string }
+
+const env = (name: string) => process.env[name] ?? import.meta.env[name] ?? ''
+let cached: { at: number; site: Site } | null = null
+
+/** Encabezado del sitio: lo editado en el panel; si está vacío, las variables de entorno. */
+export async function getSite(): Promise<Site> {
+  if (cached && Date.now() - cached.at < 30_000) return cached.site
+  const { data } = await get<Partial<Site>>('/site')
+  const site = {
+    handle: data?.handle || env('SITE_HANDLE') || 'Proyectos',
+    tagline: data?.tagline || env('SITE_TAGLINE'),
+    link: data?.link || env('SITE_LINK'),
+  }
+  if (data) cached = { at: Date.now(), site }
+  return site
 }

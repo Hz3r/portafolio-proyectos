@@ -85,7 +85,7 @@ export default function StoryEditor({
               <SortableItem key={s.id} id={s.id}>
                 {(handle, dragging) => (
                   <div className={`bg-surface rounded-2xl border ${dragging ? 'border-accent shadow-2xl' : 'border-line'}`}>
-                    <div className="flex items-center gap-2 p-2.5 sm:gap-3">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 p-2.5 sm:flex-nowrap sm:gap-3">
                       <button
                         type="button"
                         ref={handle.ref}
@@ -96,13 +96,13 @@ export default function StoryEditor({
                       >
                         <Grip />
                       </button>
-                      <span className="pixel text-accent w-32 shrink-0 max-sm:hidden">{labelOf(s.type)}</span>
+                      <span className="pixel text-accent shrink-0 max-sm:order-first max-sm:basis-full max-sm:px-2 max-sm:pt-1.5 sm:w-32">{labelOf(s.type)}</span>
                       <input
                         className="field !bg-bg min-w-0 flex-1 !py-2 font-medium"
                         value={s.title}
                         onChange={(e) => patch(s.id, { ...s, title: e.target.value })}
                         maxLength={120}
-                        placeholder={`Título del capítulo (${labelOf(s.type).toLowerCase()})`}
+                        placeholder="Título del capítulo"
                         aria-label="Título del capítulo"
                       />
                       <button type="button" className="text-dim hover:text-ink px-2 py-2 text-sm" onClick={() => toggle(s.id)} aria-expanded={open}>
@@ -131,7 +131,7 @@ export default function StoryEditor({
 
       <div className="mt-6">
         <p className="label">Añadir bloque</p>
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           {KINDS.map((k) => (
             <li key={k.type}>
               <button

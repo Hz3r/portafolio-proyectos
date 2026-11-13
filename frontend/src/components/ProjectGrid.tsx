@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react'
 import type { Project, Tag } from '../lib/api'
 import { pad } from '../lib/api'
 import Cover from './Cover'
-import TagBadge, { TagIcon } from './TagBadge'
-
-const ALL = '__todos__'
+import FilterBar, { ALL } from './FilterBar'
+import QuickView from './QuickView'
+import TagBadge from './TagBadge'
 
 export default function ProjectGrid({ projects }: { projects: Project[] }) {
   const [tag, setTag] = useState(ALL)
+  const [quick, setQuick] = useState<Project | null>(null)
   // Tras el primer cambio de filtro la entrada escalonada ya no debe repetirse.
   const [touched, setTouched] = useState(false)
 
@@ -21,38 +22,21 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
         if (entry) entry.count++
         else seen.set(t.id, { tag: t, count: 1 })
       }
-    return [...seen.values()].sort((a, b) => b.count - a.count).map((e) => e.tag)
+    return [...seen.values()].sort((a, b) => b.count - a.count)
   }, [projects])
 
   const visible = tag === ALL ? projects : projects.filter((p) => p.tags.some((t) => t.id === tag))
 
+  // Un clic normal abre la vista rápida; con Ctrl/⌘ o botón central, el enlace de siempre.
+  const open = (e: React.MouseEvent, p: Project) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    setQuick(p)
+  }
+
   return (
     <main>
-      {tags.length > 1 && (
-        <nav aria-label="Filtrar por etiqueta" className="-mx-5 mb-8 overflow-x-auto px-5 sm:mx-0 sm:mb-10 sm:px-0">
-          <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-            {[null, ...tags].map((t) => {
-              const id = t?.id ?? ALL
-              const active = id === tag
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => (setTag(id), setTouched(true))}
-                    className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
-                      active ? 'border-accent bg-accent text-bg' : 'border-line text-dim hover:border-dim hover:text-ink'
-                    }`}
-                  >
-                    {t && <span className={active && !t.iconUrl ? '[&_svg]:fill-current' : ''}><TagIcon tag={t} /></span>}
-                    {t?.name ?? 'Todos'}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
-      )}
+      {tags.length > 1 && <FilterBar tags={tags} active={tag} onChange={(id) => (setTag(id), setTouched(true))} />}
 
       <ul className="grid gap-x-7 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
@@ -67,6 +51,8 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
             >
               <a
                 href={`/p/${p.slug}`}
+                onClick={(e) => open(e, p)}
+                aria-haspopup="dialog"
                 className="card"
                 style={{ ['--i' as string]: Math.min(i, 8), animation: touched ? 'none' : undefined }}
               >
@@ -92,6 +78,7 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
                   {p.tags.slice(0, 3).map((t) => (
                     <TagBadge key={t.id} tag={t} plain />
                   ))}
+                  {p.tags.length > 3 && <span className="pixel text-dim">+{p.tags.length - 3}</span>}
                   {p.year && <span className="pixel text-dim">{p.year}</span>}
                   {!p.url && (
                     <span className="pixel text-dim border-line ml-auto flex items-center gap-1.5 rounded-full border px-2 py-1.5">
@@ -104,6 +91,8 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
           ))}
         </AnimatePresence>
       </ul>
+
+      <AnimatePresence>{quick && <QuickView project={quick} onClose={() => setQuick(null)} />}</AnimatePresence>
     </main>
   )
 }

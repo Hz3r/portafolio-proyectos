@@ -23,6 +23,11 @@ export function publicRoutes({ db, mediaUrl, storage }: Deps) {
     return c.json(serializeProject(project, mediaUrl))
   })
 
+  app.get('/site', async (c) => {
+    const site = await db.siteSettings.findUnique({ where: { id: 1 } })
+    return c.json({ handle: site?.handle ?? '', tagline: site?.tagline ?? '', link: site?.link ?? '' })
+  })
+
   // El bucket es privado: redirigimos a una URL firmada de lectura.
   app.get('/media/*', async (c) => {
     const key = decodeURIComponent(c.req.path.replace(/^\/media\//, ''))

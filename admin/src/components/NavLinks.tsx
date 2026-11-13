@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const links = [
   { href: '/', label: 'Proyectos', match: (p: string) => p === '/' || p.startsWith('/projects') },
   { href: '/tags', label: 'Etiquetas', match: (p: string) => p.startsWith('/tags') },
+  { href: '/settings', label: 'Ajustes', match: (p: string) => p.startsWith('/settings') },
 ]
 
 export default function NavLinks() {

@@ -2,9 +2,9 @@
 import Boot from '../components/Boot'
 import ProjectGrid from '../components/ProjectGrid'
 import Base from '../layouts/Base.astro'
-import { getProjects, site } from '../lib/server'
+import { getProjects, getSite } from '../lib/server'
 
-const { projects, ok } = await getProjects()
+const [{ projects, ok }, site] = await Promise.all([getProjects(), getSite()])
 if (ok) Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=300')
 const count = projects.length
 ---

@@ -5,9 +5,11 @@ import { marked } from 'marked'
 import Link from 'next/link'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { deleteProject, updateProject } from '@/app/actions'
+import type { IconHit } from '@/lib/icons'
 import type { Project, Section, Tag } from '@/lib/types'
 import MediaManager from './MediaManager'
 import StoryEditor from './StoryEditor'
+import TagForm from './TagForm'
 import { Tabs, TagIcon, Toggle } from './ui'
 
 type Form = {
@@ -48,7 +50,22 @@ const slugify = (title: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 80)
 
-export default function ProjectEditor({ project, allTags, siteUrl }: { project: Project; allTags: Tag[]; siteUrl: string | null }) {
+export default function ProjectEditor({
+  project,
+  allTags: initialTags,
+  siteUrl,
+  featured,
+  iconTotal,
+}: {
+  project: Project
+  allTags: Tag[]
+  siteUrl: string | null
+  featured: IconHit[]
+  iconTotal: number
+}) {
+  const [allTags, setAllTags] = useState(initialTags)
+  const [tagQuery, setTagQuery] = useState('')
+  const [creating, setCreating] = useState(false)
   const [saved, setSaved] = useState(() => toForm(project))
   const [form, setForm] = useState(saved)
   const [media, setMedia] = useState(project.media)
@@ -79,7 +96,9 @@ export default function ProjectEditor({ project, allTags, siteUrl }: { project: 
   )
 
   const selected = form.tagIds.flatMap((id) => allTags.find((t) => t.id === id) ?? [])
-  const available = allTags.filter((t) => !form.tagIds.includes(t.id))
+  const tq = tagQuery.trim().toLowerCase()
+  const available = allTags.filter((t) => !form.tagIds.includes(t.id) && (!tq || t.name.toLowerCase().includes(tq)))
+  const exact = allTags.some((t) => t.name.toLowerCase() === tq)
 
   const save = () => {
     const fail = (text: string, where: Tab = 'general') => {
@@ -246,8 +265,16 @@ export default function ProjectEditor({ project, allTags, siteUrl }: { project: 
                   ))}
                 </ul>
               )}
-              {available.length > 0 ? (
-                <ul className="flex flex-wrap gap-2">
+              <input
+                className="field !bg-bg mb-3 !rounded-full !py-2"
+                type="search"
+                value={tagQuery}
+                onChange={(e) => (setTagQuery(e.target.value), setCreating(false))}
+                placeholder="Buscar o crear etiqueta"
+                aria-label="Buscar o crear etiqueta"
+              />
+              {available.length > 0 && (
+                <ul className="flex max-h-44 flex-wrap gap-2 overflow-y-auto">
                   {available.map((t) => (
                     <li key={t.id}>
                       <button
@@ -262,10 +289,33 @@ export default function ProjectEditor({ project, allTags, siteUrl }: { project: 
                     </li>
                   ))}
                 </ul>
-              ) : (
+              )}
+              {available.length === 0 && !tq && (
                 <p className="text-dim text-sm">
-                  {allTags.length === 0 ? 'Aún no tienes etiquetas. Créalas en “Administrar etiquetas”.' : 'Ya usaste todas tus etiquetas.'}
+                  {allTags.length === 0 ? 'Aún no tienes etiquetas. Escribe un nombre para crear la primera.' : 'Ya usaste todas tus etiquetas.'}
                 </p>
+              )}
+              {tq && !exact && !creating && (
+                <button type="button" className="btn mt-3 !py-1.5 text-sm" onClick={() => setCreating(true)}>
+                  Crear “{tagQuery.trim()}”
+                </button>
+              )}
+              {creating && (
+                <div className="border-line bg-surface mt-3 rounded-xl border p-4">
+                  <TagForm
+                    key={tagQuery}
+                    initialName={tagQuery.trim()}
+                    featured={featured}
+                    total={iconTotal}
+                    onCancel={() => setCreating(false)}
+                    onSaved={(tag) => {
+                      setAllTags((list) => [...list, tag].sort((a, b) => a.name.localeCompare(b.name, 'es')))
+                      if (form.tagIds.length < 12) set('tagIds', [...form.tagIds, tag.id])
+                      setCreating(false)
+                      setTagQuery('')
+                    }}
+                  />
+                </div>
               )}
             </div>
             <p className="hint">Toca para añadir o quitar. La primera es la más visible en la tarjeta.</p>
@@ -331,7 +381,7 @@ export default function ProjectEditor({ project, allTags, siteUrl }: { project: 
             Ver en el sitio
           </a>
         )}
-        <p role="status" className={`min-w-0 flex-1 text-sm ${message?.kind === 'error' ? 'text-danger' : 'text-dim'}`}>
+        <p role="status" className={`min-w-0 flex-1 text-sm empty:hidden max-sm:order-first max-sm:basis-full ${message?.kind === 'error' ? 'text-danger' : 'text-dim'}`}>
           {message?.text ?? (dirty ? 'Hay cambios sin guardar' : '')}
         </p>
       </div>
