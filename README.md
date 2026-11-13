@@ -45,15 +45,17 @@ marcados en ellos. Sin ninguno, todos los archivos aparecen en una galería al f
 
 ### Vista rápida y filtros
 
-Al tocar un proyecto en la portada se abre una vista rápida con sus imágenes,
-tecnologías y cifras principales, y un botón para entrar a la historia completa.
+Al tocar un proyecto en la portada se abre una vista rápida con su galería
+(imágenes y videos), resumen, tecnologías, cifras y capítulos. Tocar un capítulo
+muestra su resumen dentro del mismo modal, con un enlace para verlo completo.
 Los filtros muestran las etiquetas más usadas; el resto está en "Más filtros",
 con buscador.
 
 ### Habilidades, redes y créditos
 
-- **Habilidades**: al crear o editar una etiqueta puedes marcarla como habilidad y
-  darle un grupo (Frontend, Backend…). La portada las muestra agrupadas; las que
+- **Habilidades**: se administran en la sección **Habilidades** del panel, por
+  grupos (Frontend, Backend…). Cada habilidad es una etiqueta; puedes elegir una
+  existente o crear una nueva ahí mismo. La portada las muestra agrupadas; las que
   tienen proyectos publicados sirven de filtro.
 - **Redes sociales**: se configuran en Ajustes y aparecen como iconos junto a tu
   usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.

@@ -4,7 +4,7 @@ import '@fontsource/silkscreen/400.css'
 import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
 import SoundToggle from '../components/SoundToggle'
-import Walkers from '../components/Walkers.astro'
+import Roamers from '../components/Roamers'
 import { getSite } from '../lib/server'
 
 interface Props {
@@ -36,10 +36,10 @@ const fullTitle = title ? `${title} | ${site.handle}` : `${site.handle} | Proyec
   </head>
   <body>
     <div class="stars" aria-hidden="true"><i></i><i></i></div>
-    <div class="mx-auto w-full max-w-6xl px-5 pb-24 sm:px-8">
+    <Roamers client:idle className="fixed inset-0 z-0 opacity-80" />
+    <div class="relative z-[1] mx-auto w-full max-w-6xl px-5 pb-24 sm:px-8">
       <slot />
     </div>
-    <Walkers />
     <SoundToggle client:idle transition:persist />
   </body>
 </html>
