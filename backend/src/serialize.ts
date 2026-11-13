@@ -1,4 +1,5 @@
 import type { Media, Project, ProjectTag, Tag } from './generated/prisma/client.ts'
+import { readPeople } from './people.ts'
 import { readSections } from './sections.ts'
 
 export type MediaUrl = (key: string) => string
@@ -26,7 +27,15 @@ export function serializeMedia(m: Media, url: MediaUrl) {
 }
 
 export function serializeTag(t: Tag, url: MediaUrl) {
-  return { id: t.id, name: t.name, iconPath: t.iconPath, iconUrl: t.iconKey ? url(t.iconKey) : null, color: t.color }
+  return {
+    id: t.id,
+    name: t.name,
+    iconPath: t.iconPath,
+    iconUrl: t.iconKey ? url(t.iconKey) : null,
+    color: t.color,
+    skill: t.skill,
+    skillGroup: t.skillGroup,
+  }
 }
 
 export function serializeProject(p: FullProject, url: MediaUrl) {
@@ -57,6 +66,9 @@ export function serializeProject(p: FullProject, url: MediaUrl) {
     cover,
     media,
     sections,
+    myRole: p.myRole === 'COLLABORATOR' ? 'COLLABORATOR' : 'AUTHOR',
+    myRoleNote: p.myRoleNote,
+    people: readPeople(p.people),
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
   }

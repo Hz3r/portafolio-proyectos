@@ -1,13 +1,14 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import type { Project, Tag } from '../lib/api'
+import type { Owner, Project, SkillGroup, Tag } from '../lib/api'
 import { pad } from '../lib/api'
 import Cover from './Cover'
 import FilterBar, { ALL } from './FilterBar'
 import QuickView from './QuickView'
+import Skills from './Skills'
 import TagBadge from './TagBadge'
 
-export default function ProjectGrid({ projects }: { projects: Project[] }) {
+export default function ProjectGrid({ projects, skills, owner }: { projects: Project[]; skills: SkillGroup[]; owner: Owner }) {
   const [tag, setTag] = useState(ALL)
   const [quick, setQuick] = useState<Project | null>(null)
   // Tras el primer cambio de filtro la entrada escalonada ya no debe repetirse.
@@ -36,14 +37,26 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
 
   return (
     <main>
+      <Skills
+        groups={skills}
+        active={tag}
+        onPick={(id) => {
+          setTag(id === tag ? ALL : id)
+          setTouched(true)
+          document.getElementById('proyectos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }}
+      />
+
+      <div id="proyectos" className="scroll-mt-4" />
       {tags.length > 1 && <FilterBar tags={tags} active={tag} onChange={(id) => (setTag(id), setTouched(true))} />}
 
-      <ul className="grid gap-x-7 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-x-7 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
           {visible.map((p, i) => (
             <motion.li
               key={p.id}
               layout
+              className="min-w-0"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
@@ -92,7 +105,15 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
         </AnimatePresence>
       </ul>
 
-      <AnimatePresence>{quick && <QuickView project={quick} onClose={() => setQuick(null)} />}</AnimatePresence>
+      {visible.length === 0 && (
+        <p className="border-line text-dim rounded-2xl border border-dashed px-6 py-14 text-center">
+          Ningún proyecto publicado usa esta etiqueta todavía.
+        </p>
+      )}
+
+      <AnimatePresence>
+        {quick && <QuickView project={quick} owner={owner} number={projects.indexOf(quick) + 1} onClose={() => setQuick(null)} />}
+      </AnimatePresence>
     </main>
   )
 }

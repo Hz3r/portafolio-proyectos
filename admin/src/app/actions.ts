@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { admin, request, SESSION_COOKIE } from '@/lib/api'
 import { findIcons, type IconHit } from '@/lib/icons'
-import type { Media, Presign, Project, Result, Section, Tag } from '@/lib/types'
+import type { Media, Person, Presign, Project, Result, Section, Social, Tag } from '@/lib/types'
 
 export type LoginState = { error: string; email: string } | null
 
@@ -43,7 +43,7 @@ export async function createProject() {
 
 export type ProjectInput = Partial<
   Pick<Project, 'title' | 'slug' | 'summary' | 'description' | 'url' | 'repoUrl' | 'status' | 'year' | 'coverMediaId'>
-> & { tagIds?: string[]; sections?: Section[] }
+> & { tagIds?: string[]; sections?: Section[]; myRole?: Project['myRole']; myRoleNote?: string; people?: Person[] }
 
 export async function updateProject(id: string, input: ProjectInput): Promise<Result<Project>> {
   const res = await admin<Project>(`/projects/${id}`, { method: 'PATCH', body: input })
@@ -90,7 +90,14 @@ export async function reorderMedia(projectId: string, ids: string[]): Promise<Re
   return res.ok ? { ok: true, data: undefined } : res
 }
 
-export type TagInput = { name?: string; iconPath?: string | null; iconKey?: string | null; color?: string | null }
+export type TagInput = {
+  name?: string
+  iconPath?: string | null
+  iconKey?: string | null
+  color?: string | null
+  skill?: boolean
+  skillGroup?: string
+}
 
 export async function createTag(input: TagInput & { name: string }) {
   const res = await admin<Tag>('/tags', { method: 'POST', body: input })
@@ -115,7 +122,7 @@ export async function searchIcons(query: string): Promise<IconHit[]> {
   return findIcons(String(query).slice(0, 60))
 }
 
-export type Site = { handle: string; tagline: string; link: string }
+export type Site = { handle: string; tagline: string; link: string; socials: Social[] }
 
 export async function updateSite(input: Partial<Site>) {
   return admin<Site>('/site', { method: 'PATCH', body: input })

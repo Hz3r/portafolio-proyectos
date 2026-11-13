@@ -195,7 +195,9 @@ describe('etiquetas', () => {
 
     await admin('PATCH', `/projects/${p.id}`, { tagIds: [astro.id] })
     const pub = await (await app.request('/projects/t')).json()
-    expect(pub.tags).toEqual([{ id: astro.id, name: 'Astro', iconPath: 'M1 2h3v4z', iconUrl: null, color: '#BC52EE' }])
+    expect(pub.tags).toEqual([
+      { id: astro.id, name: 'Astro', iconPath: 'M1 2h3v4z', iconUrl: null, color: '#BC52EE', skill: false, skillGroup: '' },
+    ])
     const list = await (await admin('GET', '/tags')).json()
     expect(list.map((t: { name: string; projectCount: number }) => [t.name, t.projectCount])).toEqual([['Astro', 1], ['Web', 0]])
   })
@@ -252,15 +254,63 @@ describe('historia', () => {
 
 describe('ajustes', () => {
   it('el encabezado del sitio se edita desde el panel y se lee en público', async () => {
-    expect(await (await app.request('/site')).json()).toEqual({ handle: '', tagline: '', link: '' })
+    expect(await (await app.request('/site')).json()).toEqual({ handle: '', tagline: '', link: '', socials: [], skills: [] })
     expect((await app.request('/admin/site', json('PATCH', { handle: 'x' }))).status).toBe(401)
     expect((await admin('PATCH', '/site', { link: 'javascript:alert(1)' })).status).toBe(400)
     await admin('PATCH', '/site', { handle: '@hz3r', tagline: 'Cosas que construyo' })
     await admin('PATCH', '/site', { link: 'https://instagram.com/hz3r' })
-    expect(await (await app.request('/site')).json()).toEqual({
+    expect(await (await app.request('/site')).json()).toMatchObject({
       handle: '@hz3r',
       tagline: 'Cosas que construyo',
       link: 'https://instagram.com/hz3r',
+    })
+  })
+
+  it('guarda redes sociales y agrupa las habilidades', async () => {
+    expect((await admin('PATCH', '/site', { socials: [{ kind: 'github', url: 'javascript:alert(1)' }] })).status).toBe(400)
+    expect((await admin('PATCH', '/site', { socials: [{ kind: 'myspace', url: 'https://x.com/a' }] })).status).toBe(400)
+    await admin('PATCH', '/site', {
+      socials: [
+        { kind: 'github', url: 'https://github.com/hz3r' },
+        { kind: 'email', url: 'hola@ejemplo.dev' },
+      ],
+    })
+    const react = await (await admin('POST', '/tags', { name: 'React', skill: true, skillGroup: 'Frontend' })).json()
+    await admin('POST', '/tags', { name: 'Astro', skill: true, skillGroup: 'Frontend' })
+    await admin('POST', '/tags', { name: 'Figma', skill: true })
+    await admin('POST', '/tags', { name: 'Oculta' })
+    await create({ title: 'Publicado', status: 'PUBLISHED', tagIds: [react.id] })
+    await create({ title: 'Borrador', tagIds: [react.id] })
+
+    const site = await (await app.request('/site')).json()
+    expect(site.socials).toEqual([
+      { kind: 'github', url: 'https://github.com/hz3r' },
+      { kind: 'email', url: 'mailto:hola@ejemplo.dev' },
+    ])
+    expect(site.skills.map((g: { group: string; tags: { name: string; projectCount: number }[] }) => [g.group, g.tags.map((t) => `${t.name}:${t.projectCount}`)])).toEqual([
+      ['Frontend', ['Astro:0', 'React:1']],
+      ['', ['Figma:0']],
+    ])
+  })
+
+  it('guarda los créditos de un proyecto', async () => {
+    const p = await create({ title: 'Equipo', status: 'PUBLISHED' })
+    expect(p).toMatchObject({ myRole: 'AUTHOR', myRoleNote: '', people: [] })
+    expect((await admin('PATCH', `/projects/${p.id}`, { people: [{ name: 'Ana', url: 'javascript:x' }] })).status).toBe(400)
+    expect((await admin('PATCH', `/projects/${p.id}`, { myRole: 'JEFE' })).status).toBe(400)
+    await admin('PATCH', `/projects/${p.id}`, {
+      myRole: 'COLLABORATOR',
+      myRoleNote: 'Backend',
+      people: [{ name: 'Ana', url: 'https://github.com/ana', role: 'Autora' }, { name: 'Luis' }],
+    })
+    const pub = await (await app.request('/projects/equipo')).json()
+    expect(pub).toMatchObject({
+      myRole: 'COLLABORATOR',
+      myRoleNote: 'Backend',
+      people: [
+        { name: 'Ana', url: 'https://github.com/ana', role: 'Autora' },
+        { name: 'Luis', url: '', role: '' },
+      ],
     })
   })
 

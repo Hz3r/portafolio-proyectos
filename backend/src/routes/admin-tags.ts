@@ -21,6 +21,7 @@ const fields = {
     .regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido')
     .nullable(),
 }
+Object.assign(fields, { skill: z.boolean(), skillGroup: z.string().trim().max(40) })
 const createSchema = z.object(fields).partial().required({ name: true })
 const updateSchema = z.object(fields).partial()
 

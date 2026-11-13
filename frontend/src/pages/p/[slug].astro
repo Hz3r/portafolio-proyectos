@@ -1,12 +1,13 @@
 ---
 import Actions from '../../components/Actions.astro'
 import ChapterNav from '../../components/ChapterNav'
+import Credits from '../../components/Credits.astro'
 import Gallery from '../../components/Gallery'
 import TagBadge from '../../components/TagBadge'
 import Base from '../../layouts/Base.astro'
 import { pad, stillOf } from '../../lib/api'
 import { renderMarkdown } from '../../lib/markdown'
-import { getProject, getProjects } from '../../lib/server'
+import { getProject, getProjects, getSite, ownerOf } from '../../lib/server'
 
 const project = await getProject(Astro.params.slug ?? '')
 if (project === null) return Astro.rewrite('/404')
@@ -17,7 +18,7 @@ if (project === 'error') {
   })
 }
 
-const { projects } = await getProjects()
+const [{ projects }, site] = await Promise.all([getProjects(), getSite()])
 const index = projects.findIndex((p) => p.id === project.id)
 const prev = index > 0 ? projects[index - 1] : null
 const next = index >= 0 && index < projects.length - 1 ? projects[index + 1] : null
@@ -77,6 +78,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, st
       </ul>
     )}
     <div class="mt-7 sm:mt-9"><Actions project={project} /></div>
+    <div class="mt-7 sm:mt-9"><Credits project={project} owner={ownerOf(site)} /></div>
   </header>
 
   {hero && (

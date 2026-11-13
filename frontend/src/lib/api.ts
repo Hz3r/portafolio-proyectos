@@ -9,7 +9,21 @@ export type Media = {
   height: number | null
 }
 
-export type Tag = { id: string; name: string; iconPath: string | null; iconUrl: string | null; color: string | null }
+export type Tag = {
+  id: string
+  name: string
+  iconPath: string | null
+  iconUrl: string | null
+  color: string | null
+  projectCount?: number
+}
+
+export type Person = { name: string; url: string; role: string }
+export type Social = { kind: string; url: string }
+export type SkillGroup = { group: string; tags: Tag[] }
+
+/** Lo que la vista rápida y los créditos necesitan saber del dueño del sitio. */
+export type Owner = { handle: string; github: string | null }
 
 /** Bloques de la historia de un proyecto, en orden. */
 export type Section =
@@ -29,6 +43,9 @@ export type Project = {
   repoUrl: string | null
   tags: Tag[]
   sections: Section[]
+  myRole: 'AUTHOR' | 'COLLABORATOR'
+  myRoleNote: string
+  people: Person[]
   year: number | null
   cover: Media | null
   media: Media[]
@@ -38,3 +55,24 @@ export type Project = {
 export const stillOf = (m: Media | null) => (m ? (m.type === 'IMAGE' ? m.url : m.posterUrl) : null)
 
 export const pad = (n: number) => String(n).padStart(2, '0')
+
+/** Foto de perfil de GitHub si el enlace apunta a un usuario de GitHub. */
+export function githubAvatar(url: string | null | undefined): string | null {
+  const user = url?.match(/^https?:\/\/(?:www\.)?github\.com\/([\w-]+)\/?$/)?.[1]
+  return user ? `https://github.com/${user}.png?size=96` : null
+}
+
+/** Texto plano a partir de Markdown, recortado para un resumen. */
+export function excerpt(markdown: string, max = 320): string {
+  const text = markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s.*$/gm, ' ') // los títulos no forman parte del resumen
+    .replace(/^\s{0,3}(>|[-*+]|\d+\.)\s+/gm, '')
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), max - 40)).replace(/[.,;:]$/, '')}…`
+}

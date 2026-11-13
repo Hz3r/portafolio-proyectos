@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Deps } from '../app.ts'
+import { peopleSchema } from '../people.ts'
 import { sectionsSchema } from '../sections.ts'
 import { projectInclude, serializeProject } from '../serialize.ts'
 import { uniqueSlug } from '../slug.ts'
@@ -22,6 +23,9 @@ const fields = {
   repoUrl: link.nullable(),
   tagIds: z.array(z.string()).max(12).transform((ids) => [...new Set(ids)]),
   sections: sectionsSchema,
+  myRole: z.enum(['AUTHOR', 'COLLABORATOR']),
+  myRoleNote: z.string().trim().max(120),
+  people: peopleSchema,
   year: z.number().int().min(1970).max(2100).nullable(),
   coverMediaId: z.string().nullable(),
 }

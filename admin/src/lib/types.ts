@@ -16,8 +16,26 @@ export type Tag = {
   iconPath: string | null
   iconUrl: string | null
   color: string | null
+  skill?: boolean
+  skillGroup?: string
   projectCount?: number
 }
+
+export type Person = { name: string; url: string; role: string }
+
+export const SOCIAL_KINDS = {
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  instagram: 'Instagram',
+  x: 'X (Twitter)',
+  youtube: 'YouTube',
+  tiktok: 'TikTok',
+  twitch: 'Twitch',
+  discord: 'Discord',
+  email: 'Correo',
+  web: 'Sitio web',
+} as const
+export type Social = { kind: keyof typeof SOCIAL_KINDS; url: string }
 
 export type Metric = { label: string; value: string; note: string; highlight: boolean }
 export type Step = { title: string; text: string }
@@ -42,6 +60,9 @@ export type Project = {
   repoUrl: string | null
   tags: Tag[]
   sections: Section[]
+  myRole: 'AUTHOR' | 'COLLABORATOR'
+  myRoleNote: string
+  people: Person[]
   year: number | null
   order: number
   coverMediaId: string | null

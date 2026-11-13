@@ -1,9 +1,29 @@
 ---
-import Bot from './Bot'
-// Dos mascotas que cruzan la pantalla por el borde inferior. Solo decoración.
+import Sprite, { type SpriteKind } from './Sprite'
+
+// Personajes que cruzan la pantalla por el borde inferior. Solo decoración:
+// se mueven con transform y en celular se muestran solo los tres primeros.
+type Walker = { kind: SpriteKind; size: number; seconds: number; delay: number; lift?: number; move?: 'bob' | 'hop' }
+const walkers: Walker[] = [
+  { kind: 'robot', size: 24, seconds: 46, delay: 0 },
+  { kind: 'chispa', size: 22, seconds: 63, delay: -40 },
+  { kind: 'fantasma', size: 22, seconds: 78, delay: -20, lift: 22, move: 'bob' },
+  { kind: 'ciclope', size: 22, seconds: 55, delay: -30 },
+  { kind: 'estrella', size: 20, seconds: 90, delay: -60, lift: 46, move: 'bob' },
+  { kind: 'baba', size: 22, seconds: 110, delay: -75, move: 'hop' },
+  { kind: 'dron', size: 24, seconds: 70, delay: -10, lift: 70, move: 'bob' },
+]
 ---
 
 <div class="walkers" aria-hidden="true">
-  <span class="walker walker-1"><span><Bot walking /></span></span>
-  <span class="walker walker-2"><span><Bot walking glow="#b48cff" size={20} /></span></span>
+  {walkers.map((w, i) => (
+    <span
+      class:list={['walker', i > 2 && 'max-sm:hidden']}
+      style={`--d:${w.seconds}s;--delay:${w.delay}s;--lift:${w.lift ?? 0}px`}
+    >
+      <span class="walker-turn">
+        <span class:list={['walker-body', w.move]}><Sprite kind={w.kind} size={w.size} /></span>
+      </span>
+    </span>
+  ))}
 </div>
