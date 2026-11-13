@@ -6,6 +6,11 @@ import { createTag, searchIcons, updateTag } from '@/app/actions'
 import type { Tag } from '@/lib/types'
 import { TagIcon } from './ui'
 
+const LEVELS = [
+  { value: 1, label: 'Aprendiendo', hint: 'La estoy aprendiendo: base de la pirámide' },
+  { value: 2, label: 'Soltura', hint: 'La uso con soltura: centro de la pirámide' },
+  { value: 3, label: 'Domino', hint: 'La domino: punta de la pirámide' },
+]
 const SUGGESTED = ['Frontend', 'Backend', 'Bases de datos', 'Herramientas', 'Diseño', 'IA']
 const sorted = (list: Tag[]) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
@@ -23,7 +28,7 @@ export default function SkillsManager({ initial, siteUrl }: { initial: Tag[]; si
   )
   const replace = (tag: Tag) => setTags((list) => sorted([...list.filter((t) => t.id !== tag.id), { ...list.find((t) => t.id === tag.id), ...tag }]))
 
-  const save = async (tag: Tag, input: { skill: boolean; skillGroup: string }) => {
+  const save = async (tag: Tag, input: { skill?: boolean; skillGroup?: string; skillLevel?: number }) => {
     setError(null)
     const res = await updateTag(tag.id, input)
     if (!res.ok) return setError(res.error)
@@ -63,8 +68,8 @@ export default function SkillsManager({ initial, siteUrl }: { initial: Tag[]; si
         <div className="border-line rounded-2xl border border-dashed px-6 py-10 text-center">
           <p className="font-medium">Aún no has añadido habilidades</p>
           <p className="text-dim mx-auto mt-1.5 max-w-md text-sm">
-            Crea un grupo (por ejemplo Frontend) y añade dentro las tecnologías que dominas. El panel aparece en el sitio en cuanto
-            haya una.
+            Crea un grupo (por ejemplo Frontend) y añade dentro las tecnologías que usas. La sección aparece en el portafolio en
+            cuanto haya una.
           </p>
         </div>
       )}
@@ -78,6 +83,7 @@ export default function SkillsManager({ initial, siteUrl }: { initial: Tag[]; si
             candidates={tags.filter((t) => !t.skill)}
             onAdd={(tag) => save(tag, { skill: true, skillGroup: group })}
             onRemove={(tag) => save(tag, { skill: false, skillGroup: '' })}
+            onLevel={(tag, skillLevel) => save(tag, { skillLevel })}
             onRename={(to) => rename(group, to)}
             onCreate={async (name) => {
               setError(null)
@@ -146,6 +152,7 @@ function Group({
   candidates,
   onAdd,
   onRemove,
+  onLevel,
   onRename,
   onCreate,
 }: {
@@ -154,6 +161,7 @@ function Group({
   candidates: Tag[]
   onAdd: (tag: Tag) => void
   onRemove: (tag: Tag) => void
+  onLevel: (tag: Tag, level: number) => void
   onRename: (to: string) => void
   onCreate: (name: string) => Promise<void>
 }) {
@@ -182,23 +190,36 @@ function Group({
       </div>
 
       {skills.length > 0 ? (
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {skills.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => onRemove(t)}
-                aria-label={`Quitar ${t.name} de las habilidades`}
-                className="border-accent/50 bg-accent/10 inline-flex items-center gap-2 rounded-full border py-1.5 pr-2.5 pl-2.5 text-sm"
-              >
-                <TagIcon tag={t} />
-                {t.name}
-                <span className="text-dim" aria-hidden="true">
-                  ×
-                </span>
-              </button>
-            </li>
-          ))}
+        <ul className="mt-4 space-y-1.5">
+          {[...skills]
+            .sort((a, b) => (b.skillLevel ?? 2) - (a.skillLevel ?? 2))
+            .map((t) => {
+              const level = t.skillLevel ?? 2
+              return (
+                <li key={t.id} className="bg-bg border-line flex items-center gap-3 rounded-xl border py-1.5 pr-1.5 pl-3">
+                  <TagIcon tag={t} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{t.name}</span>
+                  <span role="radiogroup" aria-label={`Nivel de ${t.name}`} className="border-line flex shrink-0 rounded-full border p-0.5">
+                    {LEVELS.map((l) => (
+                      <button
+                        key={l.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={level === l.value}
+                        title={l.hint}
+                        onClick={() => level !== l.value && onLevel(t, l.value)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${level === l.value ? 'bg-accent text-bg' : 'text-dim hover:text-ink'}`}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </span>
+                  <button type="button" onClick={() => onRemove(t)} aria-label={`Quitar ${t.name} de las habilidades`} className="text-dim hover:text-danger shrink-0 px-2 py-1 text-lg leading-none">
+                    ×
+                  </button>
+                </li>
+              )
+            })}
         </ul>
       ) : (
         <p className="text-dim mt-4 text-sm">Grupo vacío. Añade su primera habilidad.</p>

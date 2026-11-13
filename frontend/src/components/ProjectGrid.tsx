@@ -1,15 +1,19 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import type { Owner, Project, SkillGroup, Tag } from '../lib/api'
+import type { Owner, Project, Tag } from '../lib/api'
 import { pad } from '../lib/api'
 import Cover from './Cover'
 import FilterBar, { ALL } from './FilterBar'
 import QuickView from './QuickView'
-import Skills from './Skills'
 import TagBadge from './TagBadge'
 
-export default function ProjectGrid({ projects, skills, owner }: { projects: Project[]; skills: SkillGroup[]; owner: Owner }) {
-  const [tag, setTag] = useState(ALL)
+/** `initialTag` es el nombre de una etiqueta que llega en la URL (?tag=Tailwind CSS). */
+export default function ProjectGrid({ projects, owner, initialTag = '' }: { projects: Project[]; owner: Owner; initialTag?: string }) {
+  const [tag, setTag] = useState(() => {
+    const wanted = initialTag.trim().toLowerCase()
+    const match = wanted && projects.flatMap((p) => p.tags).find((t) => t.name.toLowerCase() === wanted)
+    return match ? match.id : ALL
+  })
   const [quick, setQuick] = useState<Project | null>(null)
   // Tras el primer cambio de filtro la entrada escalonada ya no debe repetirse.
   const [touched, setTouched] = useState(false)
@@ -26,6 +30,17 @@ export default function ProjectGrid({ projects, skills, owner }: { projects: Pro
     return [...seen.values()].sort((a, b) => b.count - a.count)
   }, [projects])
 
+  // El filtro queda en la URL: se puede compartir el enlace a "mis proyectos con X".
+  const pick = (id: string) => {
+    setTag(id)
+    setTouched(true)
+    const url = new URL(location.href)
+    const name = tags.find((t) => t.tag.id === id)?.tag.name
+    if (name) url.searchParams.set('tag', name)
+    else url.searchParams.delete('tag')
+    history.replaceState(history.state, '', url)
+  }
+
   const visible = tag === ALL ? projects : projects.filter((p) => p.tags.some((t) => t.id === tag))
 
   // Un clic normal abre la vista rápida; con Ctrl/⌘ o botón central, el enlace de siempre.
@@ -37,18 +52,7 @@ export default function ProjectGrid({ projects, skills, owner }: { projects: Pro
 
   return (
     <main>
-      <Skills
-        groups={skills}
-        active={tag}
-        onPick={(id) => {
-          setTag(id === tag ? ALL : id)
-          setTouched(true)
-          document.getElementById('proyectos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }}
-      />
-
-      <div id="proyectos" className="scroll-mt-4" />
-      {tags.length > 1 && <FilterBar tags={tags} active={tag} onChange={(id) => (setTag(id), setTouched(true))} />}
+      {tags.length > 1 && <FilterBar tags={tags} total={projects.length} active={tag} onChange={pick} />}
 
       <ul className="grid grid-cols-1 gap-x-7 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>

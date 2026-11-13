@@ -8,8 +8,8 @@ export default async function SkillsPage() {
     <main className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight">Habilidades</h1>
       <p className="text-dim mt-2 max-w-2xl">
-        Lo que sabes hacer, por grupos. Aparecen en un panel al inicio del sitio; las que usas en proyectos publicados sirven además
-        de filtro.
+        Lo que sabes hacer, por área y por nivel. El portafolio las muestra como una pirámide: arriba las que dominas. Las que usas
+        en proyectos publicados llevan a esos proyectos.
       </p>
       {res.ok ? (
         <SkillsManager initial={res.data} siteUrl={process.env.SITE_URL ?? null} />

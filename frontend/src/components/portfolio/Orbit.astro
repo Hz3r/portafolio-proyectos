@@ -1,0 +1,47 @@
+---
+import type { Tag } from '../../lib/api'
+import Sprite, { type SpriteKind } from '../Sprite'
+import { TagIcon } from '../TagBadge'
+
+interface Props {
+  avatar: string | null
+  name: string
+  /** Habilidades con icono; giran alrededor de la foto. */
+  skills: Tag[]
+}
+const { avatar, name, skills } = Astro.props
+const icons = skills.filter((t) => t.iconUrl || t.iconPath).slice(0, 11)
+const inner = icons.slice(0, Math.min(4, Math.ceil(icons.length / 2)))
+const outer = icons.slice(inner.length)
+// Sin suficientes iconos, giran los personajes del sitio.
+const cast: SpriteKind[] = ['estrella', 'dron', 'fantasma', 'chispa', 'nudo']
+const useCast = icons.length < 3
+---
+
+<!-- Los iconos giran sobre cuadrados rotados que sobresalen: el contenedor los recorta para no ensanchar la página. -->
+<div class="overflow-hidden py-7">
+<div class="orbit relative mx-auto aspect-square w-[calc(100%-2.75rem)] max-w-[26rem]" aria-hidden={avatar ? undefined : 'true'}>
+  <div class="border-line absolute inset-0 rounded-full border"></div>
+  <div class="border-line absolute inset-[17%] rounded-full border border-dashed"></div>
+  <div class="bg-surface border-line absolute inset-[30%] flex items-center justify-center overflow-hidden rounded-full border">
+    {avatar ? <img src={avatar} alt={`Foto de ${name}`} class="h-full w-full object-cover" /> : <Sprite kind="robot" size={84} />}
+  </div>
+
+  {useCast
+    ? cast.map((kind, i) => (
+        <span class:list={['orbit-item', i % 2 ? 'inset-[17%]' : 'inset-0']} style={`--o:${i / cast.length};--d:${i % 2 ? 46 : 70}s`}>
+          <span><Sprite kind={kind} size={24} /></span>
+        </span>
+      ))
+    : [
+        ...inner.map((tag, i) => ({ tag, ring: 'inset-[17%]', o: i / inner.length, d: 46 })),
+        ...outer.map((tag, i) => ({ tag, ring: 'inset-0', o: i / outer.length, d: 70 })),
+      ].map(({ tag, ring, o, d }) => (
+        <span class:list={['orbit-item', ring]} style={`--o:${o};--d:${d}s`}>
+          <span class="bg-bg border-line flex size-11 items-center justify-center rounded-full border" title={tag.name}>
+            <TagIcon tag={tag} size={20} />
+          </span>
+        </span>
+      ))}
+</div>
+</div>

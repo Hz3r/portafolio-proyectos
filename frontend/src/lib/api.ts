@@ -16,11 +16,49 @@ export type Tag = {
   iconUrl: string | null
   color: string | null
   projectCount?: number
+  /** Solo en habilidades: 3 la domino, 2 la uso con soltura, 1 la estoy aprendiendo. */
+  skillLevel?: number
 }
 
 export type Person = { name: string; url: string; role: string }
 export type Social = { kind: string; url: string }
 export type SkillGroup = { group: string; tags: Tag[] }
+
+export type JourneyItem = {
+  id: string
+  kind: 'WORK' | 'EDUCATION' | 'CERT' | 'MILESTONE'
+  title: string
+  place: string
+  period: string
+  text: string
+  url: string
+}
+
+/** Contenido de la página de portafolio. Lo vacío no se muestra. */
+export type Portfolio = {
+  name: string
+  role: string
+  headline: string
+  intro: string
+  location: string
+  available: boolean
+  availableNote: string
+  avatarUrl: string | null
+  cvHref: string | null
+  about: string
+  stats: { id: string; value: string; label: string }[]
+  journey: JourneyItem[]
+  services: { id: string; title: string; text: string }[]
+  contactTitle: string
+  contactText: string
+  contactEmail: string
+}
+
+/** Rutas fijas de las dos páginas; la raíz muestra la que se elija en el panel. */
+export const ROUTES = { projects: '/proyectos', portfolio: '/portafolio' } as const
+
+/** Enlace a la página de proyectos con una etiqueta ya filtrada. */
+export const tagHref = (tag: Tag) => `${ROUTES.projects}?tag=${encodeURIComponent(tag.name)}`
 
 /** Lo que la vista rápida y los créditos necesitan saber del dueño del sitio. */
 export type Owner = { handle: string; github: string | null }

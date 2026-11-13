@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { admin, request, SESSION_COOKIE } from '@/lib/api'
 import { findIcons, type IconHit } from '@/lib/icons'
-import type { Media, Person, Presign, Project, Result, Section, Social, Tag } from '@/lib/types'
+import type { Media, Person, Portfolio, Presign, Project, Result, Section, Social, Tag } from '@/lib/types'
 
 export type LoginState = { error: string; email: string } | null
 
@@ -47,15 +47,15 @@ export type ProjectInput = Partial<
 
 export async function updateProject(id: string, input: ProjectInput): Promise<Result<Project>> {
   const res = await admin<Project>(`/projects/${id}`, { method: 'PATCH', body: input })
-  revalidatePath('/')
+  revalidatePath('/projects')
   return res
 }
 
 export async function deleteProject(id: string): Promise<Result> {
   const res = await admin(`/projects/${id}`, { method: 'DELETE' })
   if (!res.ok) return res
-  revalidatePath('/')
-  redirect('/')
+  revalidatePath('/projects')
+  redirect('/projects')
 }
 
 export async function reorderProjects(ids: string[]): Promise<Result> {
@@ -97,6 +97,7 @@ export type TagInput = {
   color?: string | null
   skill?: boolean
   skillGroup?: string
+  skillLevel?: number
 }
 
 export async function createTag(input: TagInput & { name: string }) {
@@ -122,10 +123,26 @@ export async function searchIcons(query: string): Promise<IconHit[]> {
   return findIcons(String(query).slice(0, 60))
 }
 
-export type Site = { handle: string; tagline: string; link: string; socials: Social[] }
+export type Site = {
+  handle: string
+  tagline: string
+  link: string
+  socials: Social[]
+  home: 'PROJECTS' | 'PORTFOLIO'
+  portfolio: Portfolio
+}
 
 export async function updateSite(input: Partial<Site>) {
-  return admin<Site>('/site', { method: 'PATCH', body: input })
+  const res = await admin<Site>('/site', { method: 'PATCH', body: input })
+  revalidatePath('/')
+  return res
+}
+
+/** El perfil público tal como lo ve el sitio; `null` si el backend no responde. */
+export async function readSite(): Promise<Site | null> {
+  return request('/site')
+    .then((r) => (r.ok ? (r.json() as Promise<Site>) : null))
+    .catch(() => null)
 }
 
 export async function updateAccount(input: { currentPassword: string; email?: string; newPassword?: string }) {

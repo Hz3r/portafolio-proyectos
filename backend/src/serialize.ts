@@ -35,6 +35,7 @@ export function serializeTag(t: Tag, url: MediaUrl) {
     color: t.color,
     skill: t.skill,
     skillGroup: t.skillGroup,
+    skillLevel: t.skillLevel,
   }
 }
 

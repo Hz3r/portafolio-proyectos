@@ -1,0 +1,232 @@
+---
+import Cover from '../Cover'
+import SocialLinks from '../SocialLinks.astro'
+import TagBadge from '../TagBadge'
+import Journey from '../portfolio/Journey'
+import Nav from '../portfolio/Nav'
+import Orbit from '../portfolio/Orbit.astro'
+import SkillPyramid from '../portfolio/SkillPyramid'
+import Base from '../../layouts/Base.astro'
+import { ROUTES } from '../../lib/api'
+import { renderMarkdown } from '../../lib/markdown'
+import { getProjects, getSite } from '../../lib/server'
+
+// El portafolio completo en una sola página. Las secciones sin contenido no aparecen.
+const [{ projects, ok }, site] = await Promise.all([getProjects(), getSite()])
+if (ok) Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=300')
+const p = site.portfolio
+
+const name = p.name || site.handle
+const role = p.role || site.tagline
+const skills = site.skills.flatMap((g) => g.tags)
+const featured = projects.slice(0, 4)
+const [lead, ...rest] = featured
+const email = p.contactEmail || site.socials.find((s) => s.kind === 'email')?.url.replace(/^mailto:/, '') || ''
+const about = p.about ? renderMarkdown(p.about) : ''
+const hasAbout = !!about || p.stats.length > 0
+const hasContact = !!email || site.socials.length > 0
+
+const links = [
+  hasAbout && { id: 'sobre-mi', label: 'Sobre mí' },
+  skills.length > 0 && { id: 'habilidades', label: 'Habilidades' },
+  featured.length > 0 && { id: 'proyectos', label: 'Proyectos' },
+  p.journey.length > 0 && { id: 'trayectoria', label: 'Trayectoria' },
+  p.services.length > 0 && { id: 'servicios', label: 'Servicios' },
+  hasContact && { id: 'contacto', label: 'Contacto' },
+].filter((l) => !!l)
+
+// Las cifras son círculos de tamaños distintos, no una fila de tarjetas iguales.
+const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:size-40 -mt-4', 'size-32 sm:size-36 mt-6', 'size-36 -mt-2', 'size-32 mt-4']
+---
+
+<Base fullTitle={`${name} | ${role || 'Portafolio'}`} description={p.intro || p.headline || site.tagline} image={p.avatarUrl}>
+  <Nav client:load name={name} links={links} />
+
+  <header id="inicio" class="grid items-center gap-12 pt-28 pb-16 sm:pt-36 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-8 lg:pb-24">
+    <div>
+      {(p.available || p.location) && (
+        <p class="text-dim flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          {p.available && (
+            <span class="border-accent/40 text-ink flex items-center gap-2.5 rounded-full border py-1.5 pr-3.5 pl-3">
+              <span class="pulse-dot" aria-hidden="true"></span>
+              {p.availableNote || 'Disponible para nuevos proyectos'}
+            </span>
+          )}
+          {p.location && (
+            <span class="flex items-center gap-2">
+              <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true"><path d="M2 0h6v2h2v6H8v2H6v4H4v-4H2V8H0V2h2zm2 4v2h2V4z" /></svg>
+              {p.location}
+            </span>
+          )}
+        </p>
+      )}
+      <h1 class="mt-6 text-[3.25rem] leading-[0.95] font-semibold tracking-tighter text-balance sm:text-7xl lg:text-[5.5rem]">
+        {name}<span class="cursor-blink" aria-hidden="true"></span>
+      </h1>
+      {role && <p class="text-dim mt-4 text-2xl leading-tight tracking-tight sm:text-3xl">{role}</p>}
+      {p.headline && <p class="mt-7 max-w-xl text-xl leading-snug text-pretty sm:text-2xl">{p.headline}</p>}
+      {p.intro && <p class="text-dim mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-pretty">{p.intro}</p>}
+
+      <div class="mt-9 flex flex-wrap items-center gap-3">
+        <a href={ROUTES.projects} class="bg-accent text-bg rounded-full px-6 py-3 font-medium transition-transform hover:scale-[1.03] active:scale-[0.98]">
+          Ver mis proyectos
+        </a>
+        {hasContact && (
+          <a href="#contacto" class="border-line hover:border-dim rounded-full border px-6 py-3 font-medium transition-colors">Contactarme</a>
+        )}
+        {p.cvHref && (
+          <a href={p.cvHref} target="_blank" rel="noopener noreferrer" class="text-dim hover:text-ink flex items-center gap-2 rounded-full px-3 py-3 font-medium transition-colors">
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true"><path d="M5 0h2v6h2v2H7v2H5V8H3V6h2zM0 10h2v2h8v-2h2v4H0z" /></svg>
+            Descargar CV
+          </a>
+        )}
+      </div>
+      {site.socials.length > 0 && <div class="mt-8"><SocialLinks socials={site.socials} /></div>}
+    </div>
+    <Orbit avatar={p.avatarUrl} name={name} skills={skills} />
+  </header>
+
+  <main class="space-y-28 sm:space-y-40">
+    {hasAbout && (
+      <section id="sobre-mi" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Sobre mí</h2>
+        <div class="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+          {about ? <div class="prose-project" set:html={about} /> : <div />}
+          {p.stats.length > 0 && (
+            <dl class="flex max-w-md flex-wrap content-start justify-center gap-3 lg:max-w-[23rem] lg:justify-end">
+              {p.stats.map((s, i) => (
+                <div class:list={['border-line bg-surface/60 flex shrink-0 flex-col items-center justify-center rounded-full border px-4 text-center backdrop-blur-sm', bubble[i % bubble.length], i === 0 && 'border-accent/50']}>
+                  <dd class="text-4xl font-semibold tracking-tighter tabular-nums sm:text-5xl">{s.value}</dd>
+                  <dt class="text-dim mt-1.5 text-sm leading-tight text-balance">{s.label}</dt>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      </section>
+    )}
+
+    {skills.length > 0 && (
+      <section id="habilidades" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Habilidades</h2>
+        <div class="mt-6"><SkillPyramid client:visible groups={site.skills} /></div>
+      </section>
+    )}
+
+    {lead && (
+      <section id="proyectos" class="scroll-mt-24">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Proyectos</h2>
+          <a href={ROUTES.projects} class="text-dim hover:text-accent pb-1 font-medium underline decoration-1 underline-offset-4 transition-colors">
+            {projects.length > featured.length ? `Ver los ${projects.length} proyectos` : 'Abrir la página de proyectos'}
+          </a>
+        </div>
+
+        <a href={`/p/${lead.slug}`} class="card mt-10 grid items-center gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-12" style="animation:none">
+          <div class="select-frame">
+            <div class="bg-surface border-line aspect-[16/10] overflow-hidden rounded-[2rem] border"><Cover project={lead} eager /></div>
+          </div>
+          <div>
+            <h3 class="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <span class="pointer" aria-hidden="true">▶</span>{lead.title}
+            </h3>
+            {lead.summary && <p class="text-dim mt-3 line-clamp-4 text-lg leading-snug text-pretty">{lead.summary}</p>}
+            <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {lead.tags.slice(0, 4).map((t) => <TagBadge tag={t} plain />)}
+              {lead.year && <span class="pixel text-dim">{lead.year}</span>}
+            </div>
+          </div>
+        </a>
+
+        {rest.length > 0 && (
+          <ul class:list={['mt-14 grid gap-x-7 gap-y-12', rest.length === 1 ? 'sm:max-w-md' : rest.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3']}>
+            {rest.map((project) => (
+              <li class="min-w-0">
+                <a href={`/p/${project.slug}`} class="card" style="animation:none">
+                  <div class="select-frame">
+                    <div class="bg-surface border-line aspect-[16/10] overflow-hidden rounded-[1.75rem] border"><Cover project={project} /></div>
+                  </div>
+                  <h3 class="mt-4 truncate text-lg font-semibold tracking-tight">
+                    <span class="pointer" aria-hidden="true">▶</span>{project.title}
+                  </h3>
+                  {project.summary && <p class="text-dim mt-1.5 line-clamp-2 leading-snug">{project.summary}</p>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    )}
+
+    {p.journey.length > 0 && (
+      <section id="trayectoria" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl lg:text-center">Trayectoria</h2>
+        <div class="mt-12 sm:mt-16"><Journey client:visible items={p.journey} /></div>
+      </section>
+    )}
+
+    {p.services.length > 0 && (
+      <section id="servicios" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">En qué puedo ayudarte</h2>
+        <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {p.services.map((s, i) => (
+            <li class:list={['spot border-line bg-surface/60 border p-7 backdrop-blur-sm sm:p-8', i % 2 ? 'rounded-[2.25rem_0.75rem_2.25rem_2.25rem]' : 'rounded-[0.75rem_2.25rem_2.25rem_2.25rem]']}>
+              <h3 class="text-xl font-semibold tracking-tight">{s.title}</h3>
+              {s.text && <p class="text-dim mt-3 leading-relaxed text-pretty">{s.text}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {hasContact && (
+      <section id="contacto" class="contact border-line relative scroll-mt-24 overflow-hidden rounded-[2.5rem] border px-6 py-16 text-center sm:rounded-[4rem] sm:px-12 sm:py-24">
+        <h2 class="mx-auto max-w-3xl text-4xl leading-[1.02] font-semibold tracking-tighter text-balance sm:text-6xl">
+          {p.contactTitle || '¿Construimos algo juntos?'}
+        </h2>
+        <p class="text-dim mx-auto mt-5 max-w-lg text-lg leading-snug text-pretty">
+          {p.contactText || 'Cuéntame qué necesitas y te respondo en cuanto pueda.'}
+        </p>
+        {email && (
+          <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <a href={`mailto:${email}`} class="bg-accent text-bg rounded-full px-6 py-3 font-medium transition-transform hover:scale-[1.03] active:scale-[0.98]">
+              Escribirme un correo
+            </a>
+            <button type="button" data-copy={email} class="border-line hover:border-dim rounded-full border px-6 py-3 font-medium transition-colors">
+              Copiar {email}
+            </button>
+          </div>
+        )}
+        {site.socials.length > 0 && <div class="mt-8 flex justify-center"><SocialLinks socials={site.socials} /></div>}
+      </section>
+    )}
+  </main>
+
+  <footer class="text-dim mt-20 flex flex-wrap items-center justify-between gap-3 text-sm">
+    <p>{name}, {new Date().getFullYear()}</p>
+    <a href="#inicio" class="hover:text-accent py-2 transition-colors">Volver arriba</a>
+  </footer>
+</Base>
+
+<script>
+  // Un solo manejador para toda la página: copiar el correo y la luz que sigue al cursor en las tarjetas.
+  document.addEventListener('click', async (e) => {
+    const button = (e.target as HTMLElement).closest<HTMLElement>('[data-copy]')
+    if (!button) return
+    const label = button.textContent
+    try {
+      await navigator.clipboard.writeText(button.dataset.copy ?? '')
+      button.textContent = 'Correo copiado'
+    } catch {
+      button.textContent = 'No se pudo copiar'
+    }
+    setTimeout(() => (button.textContent = label), 1800)
+  })
+  document.addEventListener('pointermove', (e) => {
+    const card = (e.target as HTMLElement).closest?.<HTMLElement>('.spot')
+    if (!card) return
+    const box = card.getBoundingClientRect()
+    card.style.setProperty('--mx', `${e.clientX - box.left}px`)
+    card.style.setProperty('--my', `${e.clientY - box.top}px`)
+  })
+</script>

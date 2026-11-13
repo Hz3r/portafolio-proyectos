@@ -74,6 +74,8 @@ model Tag {
   /// Se muestra como habilidad en la portada, dentro de este grupo.
   skill      Boolean      @default(false)
   skillGroup String       @default("")
+  /// 3 = la domino, 2 = la uso con soltura, 1 = la estoy aprendiendo.
+  skillLevel Int          @default(2)
   projects  ProjectTag[]
   createdAt DateTime     @default(now())
 }
@@ -104,4 +106,8 @@ model SiteSettings {
   link    String @default("")
   /// Redes sociales: [{ kind, url }]
   socials Json   @default("[]")
+  /// Qué muestra la raíz del sitio: PROJECTS o PORTFOLIO. Ambas páginas tienen además su ruta fija.
+  home      String @default("PROJECTS")
+  /// Contenido de la página de portafolio (ver src/portfolio.ts).
+  portfolio Json   @default("{}")
 }

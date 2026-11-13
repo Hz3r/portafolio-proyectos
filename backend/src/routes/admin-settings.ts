@@ -2,7 +2,8 @@ import argon2 from 'argon2'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Deps } from '../app.ts'
-import { readSite, socialsSchema } from '../site.ts'
+import { portfolioSchema, readPortfolio } from '../portfolio.ts'
+import { HOME_PAGES, readSite, socialsSchema } from '../site.ts'
 import { invalid } from './admin-projects.ts'
 
 const siteSchema = z
@@ -15,6 +16,8 @@ const siteSchema = z
       .max(500)
       .refine((v) => v === '' || /^https?:\/\/\S+\.\S+/.test(v), 'El enlace debe empezar con http:// o https://'),
     socials: socialsSchema,
+    home: z.enum(HOME_PAGES),
+    portfolio: portfolioSchema,
   })
   .partial()
 
@@ -24,13 +27,20 @@ const accountSchema = z.object({
   newPassword: z.string().min(8, 'La contraseña nueva debe tener al menos 8 caracteres').max(200).optional(),
 })
 
-export function adminSettingsRoutes({ db, mediaUrl }: Deps) {
+export function adminSettingsRoutes({ db, mediaUrl, storage }: Deps) {
   const app = new Hono<{ Variables: { userId: string } }>()
 
   app.patch('/site', async (c) => {
     const parsed = siteSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
+    const before = parsed.data.portfolio ? readPortfolio((await db.siteSettings.findUnique({ where: { id: 1 } }))?.portfolio) : null
     await db.siteSettings.upsert({ where: { id: 1 }, update: parsed.data, create: { id: 1, ...parsed.data } })
+    // La foto o el currículum reemplazados ya no se usan.
+    if (before && parsed.data.portfolio) {
+      const { avatarKey, cvKey } = parsed.data.portfolio
+      const stale = [before.avatarKey !== avatarKey && before.avatarKey, before.cvKey !== cvKey && before.cvKey].filter((k): k is string => !!k)
+      if (stale.length) await storage.remove(stale).catch((e) => console.error('No se pudo borrar el archivo', e))
+    }
     return c.json(await readSite(db, mediaUrl))
   })
 
