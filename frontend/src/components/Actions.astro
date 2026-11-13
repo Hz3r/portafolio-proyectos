@@ -1,0 +1,48 @@
+---
+import type { Project } from '../lib/api'
+import { Lock } from './ProjectGrid'
+
+interface Props {
+  project: Project
+}
+const { project } = Astro.props
+const host = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'el proyecto'
+  }
+}
+---
+
+<div class="flex flex-wrap items-center gap-3">
+  {project.url ? (
+    <a
+      href={project.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="bg-accent text-bg inline-flex items-center gap-3 rounded-full py-3.5 pr-6 pl-5 font-medium shadow-[0_0_40px_-10px_rgb(158_255_90/0.6)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
+    >
+      <span class="text-xs" aria-hidden="true">▶</span>
+      Visitar {host(project.url)}
+    </a>
+  ) : (
+    <p class="border-line text-dim inline-flex items-center gap-3 rounded-full border py-3.5 pr-6 pl-5">
+      <span class="text-accent"><Lock /></span>
+      Proyecto privado
+    </p>
+  )}
+  {project.repoUrl && (
+    <a
+      href={project.repoUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="border-line hover:border-accent hover:text-accent inline-flex items-center gap-3 rounded-full border py-3.5 pr-6 pl-5 font-medium transition-colors"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">
+        <path d="M7 6h2v2H7zM5 8h2v2H5zM3 10h2v4H3zM5 14h2v2H5zM7 16h2v2H7zM15 6h2v2h-2zM17 8h2v2h-2zM19 10h2v4h-2zM17 14h2v2h-2zM15 16h2v2h-2zM13 4h2v4h-2zM11 8h2v8h-2zM9 16h2v4H9z" />
+      </svg>
+      Ver el repositorio
+    </a>
+  )}
+</div>

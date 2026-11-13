@@ -2,9 +2,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import type { Media } from '../lib/api'
 
-type Props = { media: Media[]; title: string; coverId?: string; projectId: string }
+type Props = { media: Media[]; title: string }
 
-export default function Gallery({ media, title, coverId, projectId }: Props) {
+export default function Gallery({ media, title }: Props) {
   const images = media.filter((m) => m.type === 'IMAGE' && m.url)
   const [open, setOpen] = useState<number | null>(null)
 
@@ -12,10 +12,10 @@ export default function Gallery({ media, title, coverId, projectId }: Props) {
     <>
       <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
         {media.map((m, i) => {
-          // El primer elemento y los videos ocupan todo el ancho.
-          const wide = i === 0 || m.type !== 'IMAGE' || (m.width && m.height && m.width / m.height > 2)
+          // Videos, imágenes panorámicas y una imagen suelta al final ocupan todo el ancho.
+          const alone = media.length % 2 === 1 && i === media.length - 1
+          const wide = alone || m.type !== 'IMAGE' || (m.width && m.height && m.width / m.height > 2)
           const frame = `bg-surface border-line overflow-hidden rounded-2xl border ${wide ? 'sm:col-span-2' : ''}`
-          const transition = m.id === coverId ? { viewTransitionName: `cover-${projectId}` } : undefined
 
           if (m.type === 'IMAGE' && m.url) {
             const index = images.indexOf(m)
@@ -25,7 +25,6 @@ export default function Gallery({ media, title, coverId, projectId }: Props) {
                 type="button"
                 onClick={() => setOpen(index)}
                 className={`${frame} group block cursor-zoom-in`}
-                style={transition}
                 aria-label={`Ampliar imagen ${index + 1} de ${images.length}`}
               >
                 <img
@@ -33,7 +32,7 @@ export default function Gallery({ media, title, coverId, projectId }: Props) {
                   alt={m.alt || `${title}, imagen ${index + 1}`}
                   width={m.width ?? undefined}
                   height={m.height ?? undefined}
-                  loading={i === 0 ? 'eager' : 'lazy'}
+                  loading="lazy"
                   decoding="async"
                   className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.015]"
                 />
@@ -42,7 +41,7 @@ export default function Gallery({ media, title, coverId, projectId }: Props) {
           }
           if (m.type === 'VIDEO' && m.url) {
             return (
-              <div key={m.id} className={frame} style={transition}>
+              <div key={m.id} className={frame}>
                 <video
                   src={m.url}
                   poster={m.posterUrl ?? undefined}

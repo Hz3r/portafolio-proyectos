@@ -13,11 +13,40 @@ se guardan en un bucket compatible con S3.
 
 ## Cómo funciona
 
-- Un proyecto tiene título, resumen, descripción (Markdown), enlace opcional, año,
-  etiquetas, imágenes y videos (archivos subidos o enlaces de YouTube/Vimeo).
+- Un proyecto tiene título, resumen, introducción, enlace opcional, enlace al
+  repositorio opcional, año, etiquetas, imágenes y videos (archivos subidos o
+  enlaces de YouTube/Vimeo).
 - **Publicado / Borrador** decide si aparece en el sitio.
 - Un proyecto **sin enlace** se muestra con la etiqueta "Privado".
 - El orden del sitio es el orden de la lista del panel (se cambia arrastrando).
+
+### Etiquetas
+
+Se administran en la sección **Etiquetas** del panel. Cada una tiene nombre e
+icono: uno prediseñado (Astro, React, Web, Frontend…) o una imagen propia (SVG o
+PNG, hasta 1 MB). En el sitio aparecen con su icono y sirven de filtro.
+
+### Historia del proyecto
+
+En la pestaña **Historia** del editor el proyecto se arma con bloques
+ordenables. En el sitio cada bloque es un capítulo, con un índice para saltar
+entre ellos:
+
+| Bloque        | Para qué                                              |
+| ------------- | ----------------------------------------------------- |
+| Texto         | Contexto, el reto, cómo se hizo (Markdown)            |
+| Galería       | Imágenes y videos elegidos de la pestaña Archivos     |
+| Métricas      | Ingresos, usuarios, resultados; una puede destacarse  |
+| Flujo         | Cómo funciona, paso a paso                            |
+| Documentación | Guías desplegables en Markdown                        |
+
+Los archivos que no se coloquen en ninguna galería aparecen al final.
+
+### Sonido
+
+El sitio tiene un botón de sonido, apagado por defecto. Al encenderlo suena una
+música ambiental a bajo volumen y un efecto al tocar enlaces y botones. Todo se
+genera en el navegador (Web Audio), sin archivos de audio.
 
 ## Desarrollo local
 

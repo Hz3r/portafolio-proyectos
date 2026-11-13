@@ -4,6 +4,7 @@ import { requireAdmin, verifyUpload } from './auth.ts'
 import type { Db } from './db.ts'
 import { adminMediaRoutes } from './routes/admin-media.ts'
 import { adminProjectRoutes } from './routes/admin-projects.ts'
+import { adminTagRoutes } from './routes/admin-tags.ts'
 import { authRoutes } from './routes/auth.ts'
 import { publicRoutes } from './routes/public.ts'
 import type { Storage } from './storage.ts'
@@ -50,6 +51,7 @@ export function createApp(config: AppConfig) {
   admin.use('*', requireAdmin(config.jwtSecret))
   admin.route('/', adminProjectRoutes(deps))
   admin.route('/', adminMediaRoutes(deps))
+  admin.route('/', adminTagRoutes(deps))
   app.route('/admin', admin)
 
   app.notFound((c) => c.json({ error: 'No encontrado' }, 404))

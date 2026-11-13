@@ -1,44 +1,51 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import type { Project } from '../lib/api'
+import type { Project, Tag } from '../lib/api'
 import { pad } from '../lib/api'
 import Cover from './Cover'
+import TagBadge, { TagIcon } from './TagBadge'
 
-const ALL = 'Todos'
+const ALL = '__todos__'
 
 export default function ProjectGrid({ projects }: { projects: Project[] }) {
   const [tag, setTag] = useState(ALL)
   // Tras el primer cambio de filtro la entrada escalonada ya no debe repetirse.
   const [touched, setTouched] = useState(false)
 
+  // Etiquetas ordenadas por cuántos proyectos las usan.
   const tags = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const p of projects) for (const t of p.tags) counts.set(t, (counts.get(t) ?? 0) + 1)
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t)
+    const seen = new Map<string, { tag: Tag; count: number }>()
+    for (const p of projects)
+      for (const t of p.tags) {
+        const entry = seen.get(t.id)
+        if (entry) entry.count++
+        else seen.set(t.id, { tag: t, count: 1 })
+      }
+    return [...seen.values()].sort((a, b) => b.count - a.count).map((e) => e.tag)
   }, [projects])
 
-  const visible = tag === ALL ? projects : projects.filter((p) => p.tags.includes(tag))
+  const visible = tag === ALL ? projects : projects.filter((p) => p.tags.some((t) => t.id === tag))
 
   return (
     <main>
       {tags.length > 1 && (
         <nav aria-label="Filtrar por etiqueta" className="-mx-5 mb-8 overflow-x-auto px-5 sm:mx-0 sm:mb-10 sm:px-0">
           <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-            {[ALL, ...tags].map((t) => {
-              const active = t === tag
+            {[null, ...tags].map((t) => {
+              const id = t?.id ?? ALL
+              const active = id === tag
               return (
-                <li key={t}>
+                <li key={id}>
                   <button
                     type="button"
                     aria-pressed={active}
-                    onClick={() => (setTag(t), setTouched(true))}
-                    className={`pixel rounded-full border px-3.5 py-2.5 transition-colors ${
-                      active
-                        ? 'border-accent bg-accent text-bg'
-                        : 'border-line text-dim hover:border-dim hover:text-ink'
+                    onClick={() => (setTag(id), setTouched(true))}
+                    className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+                      active ? 'border-accent bg-accent text-bg' : 'border-line text-dim hover:border-dim hover:text-ink'
                     }`}
                   >
-                    {t}
+                    {t && <span className={active && !t.iconUrl ? '[&_svg]:fill-current' : ''}><TagIcon tag={t} /></span>}
+                    {t?.name ?? 'Todos'}
                   </button>
                 </li>
               )
@@ -81,13 +88,13 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
                   </h2>
                 </div>
                 {p.summary && <p className="text-dim mt-1.5 line-clamp-2 leading-snug">{p.summary}</p>}
-                <div className="pixel text-dim mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="mt-3.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">
                   {p.tags.slice(0, 3).map((t) => (
-                    <span key={t}>{t}</span>
+                    <TagBadge key={t.id} tag={t} plain />
                   ))}
-                  {p.year && <span>{p.year}</span>}
+                  {p.year && <span className="pixel text-dim">{p.year}</span>}
                   {!p.url && (
-                    <span className="border-line ml-auto flex items-center gap-1.5 rounded-full border px-2 py-1.5">
+                    <span className="pixel text-dim border-line ml-auto flex items-center gap-1.5 rounded-full border px-2 py-1.5">
                       <Lock /> Privado
                     </span>
                   )}

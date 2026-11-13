@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Deps } from '../app.ts'
-import { serializeProject } from '../serialize.ts'
+import { sectionsSchema } from '../sections.ts'
+import { projectInclude, serializeProject } from '../serialize.ts'
 import { uniqueSlug } from '../slug.ts'
 
 const link = z
@@ -18,10 +19,9 @@ const fields = {
   description: z.string().max(20000),
   url: link.nullable(),
   status: z.enum(['DRAFT', 'PUBLISHED']),
-  tags: z
-    .array(z.string().trim().min(1).max(30))
-    .max(12)
-    .transform((tags) => [...new Set(tags)]),
+  repoUrl: link.nullable(),
+  tagIds: z.array(z.string()).max(12).transform((ids) => [...new Set(ids)]),
+  sections: sectionsSchema,
   year: z.number().int().min(1970).max(2100).nullable(),
   coverMediaId: z.string().nullable(),
 }
@@ -34,10 +34,16 @@ export const invalid = (error: z.ZodError) => ({ error: error.issues[0]?.message
 export function adminProjectRoutes({ db, mediaUrl, storage }: Deps) {
   const app = new Hono()
 
+  /** Enlaces a etiquetas existentes, en el orden recibido; los ids desconocidos se ignoran. */
+  const tagLinks = async (ids: string[]) => {
+    const known = new Set((await db.tag.findMany({ where: { id: { in: ids } }, select: { id: true } })).map((t) => t.id))
+    return ids.filter((id) => known.has(id)).map((tagId, order) => ({ tagId, order }))
+  }
+
   app.get('/projects', async (c) => {
     const projects = await db.project.findMany({
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-      include: { media: true },
+      include: projectInclude,
     })
     return c.json(projects.map((p) => serializeProject(p, mediaUrl)))
   })
@@ -45,12 +51,17 @@ export function adminProjectRoutes({ db, mediaUrl, storage }: Deps) {
   app.post('/projects', async (c) => {
     const parsed = createSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
-    const { slug, coverMediaId: _ignored, ...data } = parsed.data
+    const { slug, coverMediaId: _ignored, tagIds, ...data } = parsed.data
     // Los proyectos nuevos entran arriba de la lista.
     const first = await db.project.aggregate({ _min: { order: true } })
     const project = await db.project.create({
-      data: { ...data, slug: await uniqueSlug(db, slug || data.title), order: (first._min.order ?? 1) - 1 },
-      include: { media: true },
+      data: {
+        ...data,
+        slug: await uniqueSlug(db, slug || data.title),
+        order: (first._min.order ?? 1) - 1,
+        tags: { create: await tagLinks(tagIds ?? []) },
+      },
+      include: projectInclude,
     })
     return c.json(serializeProject(project, mediaUrl), 201)
   })
@@ -65,7 +76,7 @@ export function adminProjectRoutes({ db, mediaUrl, storage }: Deps) {
   })
 
   app.get('/projects/:id', async (c) => {
-    const project = await db.project.findUnique({ where: { id: c.req.param('id') }, include: { media: true } })
+    const project = await db.project.findUnique({ where: { id: c.req.param('id') }, include: projectInclude })
     if (!project) return c.json({ error: 'No encontrado' }, 404)
     return c.json(serializeProject(project, mediaUrl))
   })
@@ -77,7 +88,7 @@ export function adminProjectRoutes({ db, mediaUrl, storage }: Deps) {
     const existing = await db.project.findUnique({ where: { id } })
     if (!existing) return c.json({ error: 'No encontrado' }, 404)
 
-    const { slug, coverMediaId, ...data } = parsed.data
+    const { slug, coverMediaId, tagIds, ...data } = parsed.data
     if (coverMediaId) {
       const media = await db.media.findFirst({ where: { id: coverMediaId, projectId: id } })
       if (!media) return c.json({ error: 'La portada no pertenece a este proyecto' }, 400)
@@ -87,17 +98,18 @@ export function adminProjectRoutes({ db, mediaUrl, storage }: Deps) {
       data: {
         ...data,
         ...(coverMediaId !== undefined ? { coverMediaId } : {}),
+        ...(tagIds ? { tags: { deleteMany: {}, create: await tagLinks(tagIds) } } : {}),
         ...(slug !== undefined && slug !== existing.slug
           ? { slug: await uniqueSlug(db, slug || data.title || existing.title, id) }
           : {}),
       },
-      include: { media: true },
+      include: projectInclude,
     })
     return c.json(serializeProject(project, mediaUrl))
   })
 
   app.delete('/projects/:id', async (c) => {
-    const project = await db.project.findUnique({ where: { id: c.req.param('id') }, include: { media: true } })
+    const project = await db.project.findUnique({ where: { id: c.req.param('id') }, include: projectInclude })
     if (!project) return c.json({ error: 'No encontrado' }, 404)
     await db.project.delete({ where: { id: project.id } })
     const keys = project.media.flatMap((m) => [m.key, m.posterKey]).filter((k): k is string => !!k)

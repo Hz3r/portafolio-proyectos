@@ -89,9 +89,8 @@ describe('proyectos', () => {
   it('valida y normaliza campos', async () => {
     expect((await admin('POST', '/projects', { title: '  ' })).status).toBe(400)
     expect((await admin('POST', '/projects', { title: 'X', url: 'javascript:alert(1)' })).status).toBe(400)
-    const p = await create({ title: 'X', url: '', tags: ['web', 'web', ' app '] })
+    const p = await create({ title: 'X', url: '' })
     expect(p.url).toBeNull()
-    expect(p.tags).toEqual(['web', 'app'])
     const updated = await (await admin('PATCH', `/projects/${p.id}`, { url: 'https://example.com', year: 2026 })).json()
     expect(updated).toMatchObject({ url: 'https://example.com', year: 2026, slug: 'x' })
   })
@@ -112,7 +111,8 @@ describe('archivos', () => {
 
   it('aplica formatos y límites de tamaño', async () => {
     expect((await presign('application/pdf', 10)).status).toBe(400)
-    expect((await presign('image/svg+xml', 10)).status).toBe(400)
+    expect((await presign('image/svg+xml', 2 * MB)).status).toBe(400)
+    expect((await presign('image/svg+xml', 10)).status).toBe(200)
     expect((await presign('image/png', 16 * MB)).status).toBe(400)
     expect((await presign('video/mp4', 501 * MB)).status).toBe(400)
     expect((await presign('image/png', 0)).status).toBe(400)
@@ -179,5 +179,73 @@ describe('archivos', () => {
       app.request(path, { method: 'PUT', body, headers: { 'content-length': String(body.length) } })
     expect((await send('demasiado')).status).toBe(400)
     expect((await send('abcd')).status).toBe(200)
+  })
+})
+
+describe('etiquetas', () => {
+  const tag = async (body: Record<string, unknown>) => (await admin('POST', '/tags', body)).json()
+
+  it('crea etiquetas con icono y las asigna en orden', async () => {
+    const astro = await tag({ name: 'Astro', iconPath: 'M1 2h3v4z', color: '#BC52EE' })
+    const web = await tag({ name: 'Web' })
+    expect(astro).toMatchObject({ name: 'Astro', iconPath: 'M1 2h3v4z', color: '#BC52EE', projectCount: 0 })
+
+    const p = await create({ title: 'T', status: 'PUBLISHED', tagIds: [web.id, astro.id, 'no-existe', web.id] })
+    expect(p.tags.map((t: { name: string }) => t.name)).toEqual(['Web', 'Astro'])
+
+    await admin('PATCH', `/projects/${p.id}`, { tagIds: [astro.id] })
+    const pub = await (await app.request('/projects/t')).json()
+    expect(pub.tags).toEqual([{ id: astro.id, name: 'Astro', iconPath: 'M1 2h3v4z', iconUrl: null, color: '#BC52EE' }])
+    const list = await (await admin('GET', '/tags')).json()
+    expect(list.map((t: { name: string; projectCount: number }) => [t.name, t.projectCount])).toEqual([['Astro', 1], ['Web', 0]])
+  })
+
+  it('rechaza duplicados, iconos con marcado y colores inválidos', async () => {
+    await tag({ name: 'React' })
+    expect((await admin('POST', '/tags', { name: 'react' })).status).toBe(409)
+    expect((await admin('POST', '/tags', { name: 'X', iconPath: '"/><script>alert(1)</script>' })).status).toBe(400)
+    expect((await admin('POST', '/tags', { name: 'X', color: 'red' })).status).toBe(400)
+    expect((await admin('POST', '/tags', { name: '' })).status).toBe(400)
+  })
+
+  it('al borrar o cambiar el icono elimina el archivo y desvincula proyectos', async () => {
+    const t = await tag({ name: 'Logo', iconKey: 'projects/logo.svg' })
+    expect(t.iconUrl).toBe('http://api.test/media/projects/logo.svg')
+    const p = await create({ title: 'Con etiqueta', tagIds: [t.id] })
+
+    await admin('PATCH', `/tags/${t.id}`, { iconKey: 'projects/nuevo.png' })
+    expect(removed).toEqual(['projects/logo.svg'])
+    expect((await admin('DELETE', `/tags/${t.id}`)).status).toBe(200)
+    expect(removed).toEqual(['projects/logo.svg', 'projects/nuevo.png'])
+    expect((await (await admin('GET', `/projects/${p.id}`)).json()).tags).toEqual([])
+  })
+})
+
+describe('historia', () => {
+  it('guarda bloques, resuelve galerías y enlaza el repositorio', async () => {
+    const p = await create({ title: 'Historia', status: 'PUBLISHED' })
+    const img = await (await admin('POST', `/projects/${p.id}/media`, { type: 'IMAGE', key: 'projects/h.png' })).json()
+    const res = await admin('PATCH', `/projects/${p.id}`, {
+      repoUrl: 'https://github.com/user/repo',
+      sections: [
+        { id: 'a', type: 'TEXT', title: 'El reto', body: 'Texto' },
+        { id: 'b', type: 'METRICS', title: 'Resultados', items: [{ label: 'Ingresos', value: '$4,200', highlight: true }] },
+        { id: 'c', type: 'FLOW', title: 'Cómo funciona', steps: [{ title: 'Entrada', text: 'Llega el dato' }] },
+        { id: 'd', type: 'MEDIA', title: 'Pantallas', mediaIds: [img.id, 'borrado'] },
+        { id: 'e', type: 'DOCS', title: 'Documentación', items: [{ title: 'Instalación', body: '`npm i`' }] },
+      ],
+    })
+    expect(res.status).toBe(200)
+    const pub = await (await app.request('/projects/historia')).json()
+    expect(pub.repoUrl).toBe('https://github.com/user/repo')
+    expect(pub.sections.map((s: { type: string }) => s.type)).toEqual(['TEXT', 'METRICS', 'FLOW', 'MEDIA', 'DOCS'])
+    expect(pub.sections[1].items[0]).toEqual({ label: 'Ingresos', value: '$4,200', note: '', highlight: true })
+    expect(pub.sections[3].media.map((m: { id: string }) => m.id)).toEqual([img.id])
+  })
+
+  it('rechaza bloques desconocidos y repositorios que no son enlaces', async () => {
+    const p = await create({ title: 'V' })
+    expect((await admin('PATCH', `/projects/${p.id}`, { sections: [{ id: 'x', type: 'SCRIPT' }] })).status).toBe(400)
+    expect((await admin('PATCH', `/projects/${p.id}`, { repoUrl: 'javascript:alert(1)' })).status).toBe(400)
   })
 })

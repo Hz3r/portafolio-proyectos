@@ -1,10 +1,12 @@
 ---
+import Actions from '../../components/Actions.astro'
+import ChapterNav from '../../components/ChapterNav'
 import Gallery from '../../components/Gallery'
-import { Lock } from '../../components/ProjectGrid'
+import TagBadge from '../../components/TagBadge'
 import Base from '../../layouts/Base.astro'
 import { pad, stillOf } from '../../lib/api'
-import { getProject, getProjects } from '../../lib/server'
 import { renderMarkdown } from '../../lib/markdown'
+import { getProject, getProjects } from '../../lib/server'
 
 const project = await getProject(Astro.params.slug ?? '')
 if (project === null) return Astro.rewrite('/404')
@@ -20,11 +22,29 @@ const index = projects.findIndex((p) => p.id === project.id)
 const prev = index > 0 ? projects[index - 1] : null
 const next = index >= 0 && index < projects.length - 1 ? projects[index + 1] : null
 
-// La portada va primero en la galería.
-const coverId = project.cover?.id
-const media = [...project.media].sort((a, b) => Number(b.id === coverId) - Number(a.id === coverId))
-const html = project.description ? renderMarkdown(project.description) : ''
-const host = project.url ? new URL(project.url).hostname.replace(/^www\./, '') : ''
+// La portada abre la página si es una imagen.
+const hero = project.cover?.type === 'IMAGE' ? project.cover : null
+
+// Bloques con contenido real; los vacíos no se muestran.
+const sections = project.sections.filter((s) => {
+  if (s.type === 'TEXT') return s.body.trim()
+  if (s.type === 'MEDIA') return s.media.length
+  if (s.type === 'METRICS') return s.items.some((i) => i.value)
+  if (s.type === 'FLOW') return s.steps.some((i) => i.title || i.text)
+  return s.items.some((i) => i.title || i.body.trim())
+})
+const fallback = { TEXT: 'Contexto', MEDIA: 'Galería', METRICS: 'Resultados', FLOW: 'Cómo funciona', DOCS: 'Documentación' }
+
+// Lo que no se colocó en ningún capítulo va a una galería final.
+const used = new Set(sections.flatMap((s) => (s.type === 'MEDIA' ? s.mediaIds : [])))
+const loose = project.media.filter((m) => !used.has(m.id) && m.id !== hero?.id)
+
+const chapters = [
+  ...sections.map((s) => ({ id: `c-${s.id}`, title: s.title || fallback[s.type] })),
+  ...(loose.length ? [{ id: 'c-galeria', title: sections.length ? 'Más imágenes' : 'Galería' }] : []),
+]
+const showNav = chapters.length > 1
+const intro = project.description ? renderMarkdown(project.description) : ''
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=300')
 ---
@@ -41,43 +61,134 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, st
     )}
   </nav>
 
-  <main>
-    <header class="max-w-3xl">
-      <h1 class="text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl">{project.title}</h1>
-      {project.summary && <p class="text-dim mt-4 text-xl leading-snug text-pretty sm:text-2xl">{project.summary}</p>}
-      <div class="pixel text-dim mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {project.year && <span class="text-ink">{project.year}</span>}
-        {project.tags.map((t) => <span>{t}</span>)}
-      </div>
-    </header>
-
-    {media.length > 0 && (
-      <section class="mt-10 sm:mt-14" aria-label="Galería">
-        <Gallery client:load media={media} title={project.title} coverId={coverId} projectId={project.id} />
-      </section>
+  <header>
+    <h1 class="max-w-4xl text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
+      {project.title}
+    </h1>
+    {project.summary && (
+      <p class="text-dim mt-4 max-w-2xl text-xl leading-snug text-pretty sm:mt-5 sm:text-2xl">{project.summary}</p>
     )}
+    {(project.tags.length > 0 || project.year) && (
+      <ul class="mt-6 flex flex-wrap items-center gap-2 sm:mt-8">
+        {project.tags.map((t) => <li><TagBadge tag={t} /></li>)}
+        {project.year && <li class="pixel text-dim px-2">{project.year}</li>}
+      </ul>
+    )}
+    <div class="mt-7 sm:mt-9"><Actions project={project} /></div>
+  </header>
 
-    {html && <section class="prose-project mt-12 sm:mt-16" set:html={html} />}
+  {hero && (
+    <div
+      class="bg-surface border-line mt-10 overflow-hidden rounded-2xl border sm:mt-14 sm:rounded-3xl"
+      style={`view-transition-name: cover-${project.id}`}
+    >
+      <img
+        src={hero.url}
+        alt={hero.alt || `Portada de ${project.title}`}
+        width={hero.width ?? undefined}
+        height={hero.height ?? undefined}
+        class="h-auto w-full"
+      />
+    </div>
+  )}
 
-    <section class="mt-12 sm:mt-16">
-      {project.url ? (
-        <a
-          href={project.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="bg-accent text-bg inline-flex items-center gap-3 rounded-full py-4 pr-7 pl-6 text-lg font-medium shadow-[0_0_40px_-8px_rgb(158_255_90/0.6)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
-        >
-          <span class="text-sm" aria-hidden="true">▶</span>
-          Visitar {host}
-        </a>
-      ) : (
-        <p class="border-line text-dim inline-flex items-center gap-3 rounded-full border py-3.5 pr-6 pl-5">
-          <span class="text-accent"><Lock /></span>
-          Proyecto privado, sin enlace público
-        </p>
+  <div class:list={['mt-10 sm:mt-16', showNav && 'lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-16']}>
+    {showNav && <ChapterNav client:idle chapters={chapters} />}
+
+    <main class:list={["min-w-0", showNav && "max-lg:mt-8"]}>
+      {intro && <div class="prose-project text-[1.125rem] sm:text-xl sm:leading-relaxed" set:html={intro} />}
+
+      {sections.map((s, i) => (
+        <section id={`c-${s.id}`} class:list={['chapter', (i > 0 || intro) && 'mt-16 sm:mt-24', false]}>
+          <h2 class="flex items-baseline gap-4 text-2xl font-semibold tracking-tight sm:text-4xl">
+            <span class="pixel text-accent">{pad(i + 1)}</span>
+            {s.title || fallback[s.type]}
+          </h2>
+
+          <div class="mt-6 sm:mt-8">
+            {s.type === 'TEXT' && <div class="prose-project" set:html={renderMarkdown(s.body)} />}
+
+            {s.type === 'MEDIA' && (
+              <figure>
+                <Gallery client:visible media={s.media} title={project.title} />
+                {s.caption && <figcaption class="text-dim mt-4 text-sm">{s.caption}</figcaption>}
+              </figure>
+            )}
+
+            {s.type === 'METRICS' && (
+              <dl class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+                {s.items.filter((m) => m.value).map((m) => (
+                  <div
+                    class:list={[
+                      'bg-surface flex flex-col rounded-2xl border p-5 sm:p-6',
+                      m.highlight
+                        ? 'border-accent/50 col-span-2 shadow-[0_0_60px_-24px_rgb(158_255_90/0.55)]'
+                        : 'border-line',
+                    ]}
+                  >
+                    <dd
+                      class:list={[
+                        'order-1 font-semibold tracking-tight tabular-nums',
+                        m.highlight ? 'text-accent text-5xl sm:text-6xl' : 'text-3xl sm:text-4xl',
+                      ]}
+                    >
+                      {m.value}
+                    </dd>
+                    <dt class="order-2 mt-3 font-medium">{m.label}</dt>
+                    {m.note && <dd class="text-dim order-3 mt-1 text-sm leading-snug">{m.note}</dd>}
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {s.type === 'FLOW' && (
+              <ol class="max-w-2xl">
+                {s.steps.filter((st) => st.title || st.text).map((st, n, all) => (
+                  <li class="relative grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 pb-8 last:pb-0 sm:gap-x-6">
+                    {n < all.length - 1 && <span class="bg-line absolute top-11 bottom-0 left-[1.375rem] w-px" aria-hidden="true" />}
+                    <span class="pixel border-line bg-surface text-accent flex size-11 items-center justify-center rounded-xl border">
+                      {pad(n + 1)}
+                    </span>
+                    <div class="pt-2">
+                      {st.title && <h3 class="text-lg font-semibold tracking-tight">{st.title}</h3>}
+                      {st.text && <p class="text-dim mt-1.5 leading-relaxed whitespace-pre-line">{st.text}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {s.type === 'DOCS' && (
+              <div class="border-line divide-line bg-surface max-w-3xl divide-y overflow-hidden rounded-2xl border">
+                {s.items.filter((d) => d.title || d.body.trim()).map((d, n) => (
+                  <details class="doc" open={n === 0 && s.items.length === 1}>
+                    <summary>{d.title || `Guía ${n + 1}`}</summary>
+                    <div class="prose-project px-5 pb-6 text-base" set:html={renderMarkdown(d.body)} />
+                  </details>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ))}
+
+      {loose.length > 0 && (
+        <section id="c-galeria" class:list={['chapter', (sections.length > 0 || intro) && 'mt-16 sm:mt-24']}>
+          {(sections.length > 0 || intro) && (
+            <h2 class="flex items-baseline gap-4 text-2xl font-semibold tracking-tight sm:text-4xl">
+              {sections.length > 0 && <span class="pixel text-accent">{pad(sections.length + 1)}</span>}
+              {sections.length ? 'Más imágenes' : 'Galería'}
+            </h2>
+          )}
+          <div class="mt-6 sm:mt-8"><Gallery client:visible media={loose} title={project.title} /></div>
+        </section>
       )}
-    </section>
-  </main>
+
+      {(sections.length > 0 || loose.length > 0) && (
+        <div class="border-line mt-16 border-t pt-10 sm:mt-24"><Actions project={project} /></div>
+      )}
+    </main>
+  </div>
 
   {(prev || next) && (
     <nav class="border-line mt-20 grid grid-cols-2 gap-4 border-t pt-8" aria-label="Otros proyectos">
