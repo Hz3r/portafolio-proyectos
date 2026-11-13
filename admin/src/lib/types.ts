@@ -10,6 +10,27 @@ export type Media = {
   order: number
 }
 
+export type Tag = {
+  id: string
+  name: string
+  iconPath: string | null
+  iconUrl: string | null
+  color: string | null
+  projectCount?: number
+}
+
+export type Metric = { label: string; value: string; note: string; highlight: boolean }
+export type Step = { title: string; text: string }
+export type Doc = { title: string; body: string }
+
+/** Bloques con los que se arma la historia de un proyecto. */
+export type Section =
+  | { id: string; type: 'TEXT'; title: string; body: string }
+  | { id: string; type: 'MEDIA'; title: string; mediaIds: string[]; caption: string }
+  | { id: string; type: 'METRICS'; title: string; items: Metric[] }
+  | { id: string; type: 'FLOW'; title: string; steps: Step[] }
+  | { id: string; type: 'DOCS'; title: string; items: Doc[] }
+
 export type Project = {
   id: string
   slug: string
@@ -18,7 +39,9 @@ export type Project = {
   description: string
   url: string | null
   status: 'DRAFT' | 'PUBLISHED'
-  tags: string[]
+  repoUrl: string | null
+  tags: Tag[]
+  sections: Section[]
   year: number | null
   order: number
   coverMediaId: string | null

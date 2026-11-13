@@ -206,6 +206,115 @@
   }
 }
 
+@layer components {
+  /* Índice de capítulos. Móvil: barra fija que se desliza. Escritorio: columna fija a la izquierda. */
+  .chapter-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-inline: -1.25rem;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .chapter-nav ol {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    padding: 0.6rem 1.25rem;
+    scrollbar-width: none;
+  }
+  .chapter-nav a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.875rem;
+    color: var(--color-dim);
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+  .chapter-nav a:hover {
+    color: var(--color-ink);
+  }
+  .chapter-nav a.on {
+    color: var(--color-ink);
+    background: var(--color-surface);
+  }
+  .chapter-nav a.on .pixel {
+    color: var(--color-accent);
+  }
+  @media (min-width: 64rem) {
+    .chapter-nav {
+      top: 2.5rem;
+      margin: 0;
+      background: none;
+      backdrop-filter: none;
+      border: 0;
+    }
+    .chapter-nav ol {
+      flex-direction: column;
+      gap: 0.125rem;
+      overflow: visible;
+      padding: 0;
+      border-left: 1px solid var(--color-line);
+    }
+    .chapter-nav a {
+      white-space: normal;
+      border-radius: 0;
+      margin-left: -1px;
+      border-left: 1px solid transparent;
+      padding: 0.45rem 0 0.45rem 1rem;
+    }
+    .chapter-nav a.on {
+      background: none;
+      border-left-color: var(--color-accent);
+    }
+  }
+
+  .chapter {
+    scroll-margin-top: 5rem;
+  }
+
+  /* Documentación desplegable. */
+  .doc summary {
+    display: flex;
+    cursor: pointer;
+    list-style: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    font-weight: 500;
+  }
+  .doc summary::-webkit-details-marker {
+    display: none;
+  }
+  .doc summary::after {
+    content: '+';
+    font-family: var(--font-pixel);
+    color: var(--color-accent);
+  }
+  .doc[open] summary::after {
+    content: '-';
+  }
+  .doc summary:hover {
+    color: var(--color-accent);
+  }
+}
+
+@keyframes eq {
+  from {
+    scale: 1 0.35;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
 @keyframes blink {
   50% {
     opacity: 0;

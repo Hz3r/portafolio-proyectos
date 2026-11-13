@@ -9,20 +9,24 @@ import { Grip, SortableItem, SortableList } from './Sortable'
 
 type Upload = { id: string; name: string; progress: number; error?: string }
 
-const ACCEPT = 'image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm'
+const ACCEPT = 'image/jpeg,image/png,image/webp,image/avif,image/gif,image/svg+xml,video/mp4,video/webm'
 const MB = 1024 * 1024
+
+type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
 export default function MediaManager({
   projectId,
-  initial,
-  initialCoverId,
+  media,
+  setMedia,
+  coverId,
+  setCoverId,
 }: {
   projectId: string
-  initial: Media[]
-  initialCoverId: string | null
+  media: Media[]
+  setMedia: SetState<Media[]>
+  coverId: string | null
+  setCoverId: SetState<string | null>
 }) {
-  const [media, setMedia] = useState(initial)
-  const [coverId, setCoverId] = useState(initialCoverId)
   const [uploads, setUploads] = useState<Upload[]>([])
   const [error, setError] = useState<string | null>(null)
   const [over, setOver] = useState(false)
@@ -133,12 +137,10 @@ export default function MediaManager({
   }
 
   return (
-    <section className="mt-14" aria-labelledby="media-title">
-      <h2 id="media-title" className="text-xl font-semibold tracking-tight">
-        Imágenes y videos
-      </h2>
-      <p className="text-dim mt-1.5 text-sm">
-        Se guardan al instante. Arrastra para ordenar; la portada es la que se ve en la lista de proyectos.
+    <section aria-label="Imágenes y videos">
+      <p className="text-dim max-w-2xl">
+        Se guardan al instante. Arrastra para ordenar; la portada es la que se ve en la lista de proyectos. Para colocarlos
+        dentro de la historia, añade un bloque de galería en la pestaña Historia.
       </p>
 
       <div

@@ -9,6 +9,16 @@ export type Media = {
   height: number | null
 }
 
+export type Tag = { id: string; name: string; iconPath: string | null; iconUrl: string | null; color: string | null }
+
+/** Bloques de la historia de un proyecto, en orden. */
+export type Section =
+  | { id: string; type: 'TEXT'; title: string; body: string }
+  | { id: string; type: 'MEDIA'; title: string; mediaIds: string[]; media: Media[]; caption: string }
+  | { id: string; type: 'METRICS'; title: string; items: { label: string; value: string; note: string; highlight: boolean }[] }
+  | { id: string; type: 'FLOW'; title: string; steps: { title: string; text: string }[] }
+  | { id: string; type: 'DOCS'; title: string; items: { title: string; body: string }[] }
+
 export type Project = {
   id: string
   slug: string
@@ -16,7 +26,9 @@ export type Project = {
   summary: string
   description: string
   url: string | null
-  tags: string[]
+  repoUrl: string | null
+  tags: Tag[]
+  sections: Section[]
   year: number | null
   cover: Media | null
   media: Media[]

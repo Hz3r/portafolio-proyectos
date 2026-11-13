@@ -7,18 +7,17 @@ export default async function ProjectsPage() {
   const res = await admin<Project[]>('/projects')
   const projects = res.ok ? res.data : []
   const published = projects.filter((p) => p.status === 'PUBLISHED').length
+  const stats = [
+    { label: 'Proyectos', value: projects.length },
+    { label: 'Publicados', value: published },
+    { label: 'Borradores', value: projects.length - published },
+    { label: 'Privados', value: projects.filter((p) => !p.url).length },
+  ]
 
   return (
     <main className="pt-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Proyectos</h1>
-          {res.ok && projects.length > 0 && (
-            <p className="text-dim mt-2">
-              {published} de {projects.length} publicados. Arrastra para cambiar el orden en el sitio.
-            </p>
-          )}
-        </div>
+        <h1 className="text-3xl font-semibold tracking-tight">Proyectos</h1>
         <form action={createProject}>
           <button className="btn btn-primary">Nuevo proyecto</button>
         </form>
@@ -34,7 +33,17 @@ export default async function ProjectsPage() {
           <p className="text-dim mt-2">Crea el primero con el botón “Nuevo proyecto”.</p>
         </div>
       ) : (
-        <ProjectList initial={projects} />
+        <>
+          <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {stats.map((s) => (
+              <div key={s.label} className="bg-surface border-line rounded-2xl border px-4 py-4">
+                <dt className="pixel text-dim">{s.label}</dt>
+                <dd className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">{s.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <ProjectList initial={projects} />
+        </>
       )}
     </main>
   )

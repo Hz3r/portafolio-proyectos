@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { admin, request, SESSION_COOKIE } from '@/lib/api'
-import type { Media, Presign, Project, Result } from '@/lib/types'
+import type { Media, Presign, Project, Result, Section, Tag } from '@/lib/types'
 
 export type LoginState = { error: string; email: string } | null
 
@@ -41,8 +41,8 @@ export async function createProject() {
 }
 
 export type ProjectInput = Partial<
-  Pick<Project, 'title' | 'slug' | 'summary' | 'description' | 'url' | 'status' | 'tags' | 'year' | 'coverMediaId'>
->
+  Pick<Project, 'title' | 'slug' | 'summary' | 'description' | 'url' | 'repoUrl' | 'status' | 'year' | 'coverMediaId'>
+> & { tagIds?: string[]; sections?: Section[] }
 
 export async function updateProject(id: string, input: ProjectInput): Promise<Result<Project>> {
   const res = await admin<Project>(`/projects/${id}`, { method: 'PATCH', body: input })
@@ -86,5 +86,25 @@ export async function deleteMedia(id: string): Promise<Result> {
 
 export async function reorderMedia(projectId: string, ids: string[]): Promise<Result> {
   const res = await admin(`/projects/${projectId}/media/reorder`, { method: 'PATCH', body: { ids } })
+  return res.ok ? { ok: true, data: undefined } : res
+}
+
+export type TagInput = { name?: string; iconPath?: string | null; iconKey?: string | null; color?: string | null }
+
+export async function createTag(input: TagInput & { name: string }) {
+  const res = await admin<Tag>('/tags', { method: 'POST', body: input })
+  revalidatePath('/tags')
+  return res
+}
+
+export async function updateTag(id: string, input: TagInput) {
+  const res = await admin<Tag>(`/tags/${id}`, { method: 'PATCH', body: input })
+  revalidatePath('/tags')
+  return res
+}
+
+export async function deleteTag(id: string): Promise<Result> {
+  const res = await admin(`/tags/${id}`, { method: 'DELETE' })
+  revalidatePath('/tags')
   return res.ok ? { ok: true, data: undefined } : res
 }
