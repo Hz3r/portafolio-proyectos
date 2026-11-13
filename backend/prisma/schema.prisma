@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  EMBED
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  title        String
+  summary      String        @default("")
+  description  String        @default("")
+  url          String?
+  status       ProjectStatus @default(DRAFT)
+  tags         String[]
+  year         Int?
+  order        Int           @default(0)
+  coverMediaId String?       @unique
+  cover        Media?        @relation("ProjectCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  media        Media[]       @relation("ProjectMedia")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, order])
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation("ProjectMedia", fields: [projectId], references: [id], onDelete: Cascade)
+  coverOf   Project?  @relation("ProjectCover")
+  type      MediaType
+  key       String    @default("")
+  embedUrl  String?
+  posterKey String?
+  alt       String    @default("")
+  width     Int?
+  height    Int?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([projectId, order])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
