@@ -328,6 +328,34 @@ describe('ajustes', () => {
     await admin('PATCH', '/site', { handle: '@hz3r' })
     expect((await (await app.request('/site')).json()).portfolio.name).toBe('Hz3r')
 
+    // Galería por categorías: al quitar una imagen se borra su archivo.
+    expect((await admin('PATCH', '/site', { portfolio: { gallery: [{ id: 'c', name: '' }] } })).status).toBe(400)
+    const item = (n: string) => ({ id: n, key: `projects/${n}.png`, title: n })
+    await admin('PATCH', '/site', { portfolio: { gallery: [{ id: 'c', name: 'Certificados', items: [item('a'), item('b')] }] } })
+    removed.length = 0
+    site = await (await app.request('/site')).json()
+    expect(site.portfolio.gallery[0].items[1]).toMatchObject({ title: 'b', url: 'http://api.test/media/projects/b.png', width: null })
+    await admin('PATCH', '/site', { portfolio: { gallery: [{ id: 'c', name: 'Certificados', items: [item('b')] }] } })
+    expect(removed).toEqual(['projects/a.png'])
+
+    // Redes propias: nombre obligatorio, icono de la librería o imagen subida.
+    expect((await admin('PATCH', '/site', { socials: [{ kind: 'custom', url: 'https://dev.to/hz3r' }] })).status).toBe(400)
+    expect((await admin('PATCH', '/site', { socials: [{ kind: 'custom', label: 'DEV', url: 'https://dev.to/hz3r', iconPath: '<svg>' }] })).status).toBe(400)
+    await admin('PATCH', '/site', {
+      socials: [
+        { kind: 'custom', label: 'DEV', url: 'https://dev.to/hz3r', iconKey: 'projects/dev.svg' },
+        { kind: 'github', url: 'https://github.com/hz3r', label: 'se ignora' },
+      ],
+    })
+    site = await (await app.request('/site')).json()
+    expect(site.socials).toEqual([
+      { kind: 'custom', label: 'DEV', url: 'https://dev.to/hz3r', iconPath: null, iconKey: 'projects/dev.svg', iconUrl: 'http://api.test/media/projects/dev.svg' },
+      { kind: 'github', url: 'https://github.com/hz3r' },
+    ])
+    removed.length = 0
+    await admin('PATCH', '/site', { socials: [{ kind: 'custom', label: 'DEV', url: 'https://dev.to/hz3r', iconPath: 'M1 2h3v4z' }] })
+    expect(removed).toEqual(['projects/dev.svg'])
+
     expect((await admin('POST', '/tags', { name: 'Rust', skill: true, skillLevel: 9 })).status).toBe(400)
     const tag = await (await admin('POST', '/tags', { name: 'Rust', skill: true, skillLevel: 3 })).json()
     expect(tag.skillLevel).toBe(3)

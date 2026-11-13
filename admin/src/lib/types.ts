@@ -37,12 +37,22 @@ export const SOCIAL_KINDS = {
   email: 'Correo',
   web: 'Sitio web',
 } as const
-export type Social = { kind: keyof typeof SOCIAL_KINDS; url: string }
+/** Una red conocida, o `custom`: una creada por ti, con nombre e icono propios. */
+export type Social = {
+  kind: keyof typeof SOCIAL_KINDS | 'custom'
+  url: string
+  label?: string
+  iconPath?: string | null
+  iconKey?: string | null
+  iconUrl?: string | null
+}
 
 export const JOURNEY_KINDS = { WORK: 'Trabajo', EDUCATION: 'Formación', CERT: 'Certificación', MILESTONE: 'Logro' } as const
 export type JourneyItem = { id: string; kind: keyof typeof JOURNEY_KINDS; title: string; place: string; period: string; text: string; url: string }
 export type Stat = { id: string; value: string; label: string }
 export type Service = { id: string; title: string; text: string }
+export type GalleryItem = { id: string; key: string; url: string; title: string; text: string; width: number | null; height: number | null }
+export type GalleryCategory = { id: string; name: string; items: GalleryItem[] }
 
 /** Contenido de la página de portafolio. */
 export type Portfolio = {
@@ -62,6 +72,7 @@ export type Portfolio = {
   stats: Stat[]
   journey: JourneyItem[]
   services: Service[]
+  gallery: GalleryCategory[]
   contactTitle: string
   contactText: string
   contactEmail: string

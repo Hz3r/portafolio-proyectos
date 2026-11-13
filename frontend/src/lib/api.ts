@@ -21,7 +21,8 @@ export type Tag = {
 }
 
 export type Person = { name: string; url: string; role: string }
-export type Social = { kind: string; url: string }
+/** Una red conocida, o `custom` con nombre e icono propios. */
+export type Social = { kind: string; url: string; label?: string; iconPath?: string | null; iconUrl?: string | null }
 export type SkillGroup = { group: string; tags: Tag[] }
 
 export type JourneyItem = {
@@ -33,6 +34,9 @@ export type JourneyItem = {
   text: string
   url: string
 }
+
+export type GalleryItem = { id: string; url: string; title: string; text: string; width: number | null; height: number | null }
+export type GalleryCategory = { id: string; name: string; items: GalleryItem[] }
 
 /** Contenido de la página de portafolio. Lo vacío no se muestra. */
 export type Portfolio = {
@@ -49,6 +53,7 @@ export type Portfolio = {
   stats: { id: string; value: string; label: string }[]
   journey: JourneyItem[]
   services: { id: string; title: string; text: string }[]
+  gallery: GalleryCategory[]
   contactTitle: string
   contactText: string
   contactEmail: string

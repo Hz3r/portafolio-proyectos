@@ -5,8 +5,30 @@ import { type MediaUrl, serializeTag } from './serialize.ts'
 
 export const SOCIAL_KINDS = ['github', 'linkedin', 'instagram', 'x', 'youtube', 'tiktok', 'twitch', 'discord', 'email', 'web'] as const
 
+/**
+ * Una red: una de las conocidas, o `custom` con nombre e icono propios
+ * (trazo de la librería o imagen subida, igual que las etiquetas).
+ */
 const socialSchema = z
-  .object({ kind: z.enum(SOCIAL_KINDS), url: z.string().trim().min(1).max(500) })
+  .object({
+    kind: z.enum([...SOCIAL_KINDS, 'custom']),
+    url: z.string().trim().min(1).max(500),
+    label: z.string().trim().max(30).optional(),
+    iconPath: z
+      .string()
+      .max(12000)
+      .regex(/^[MmLlHhVvCcSsQqTtAaZz0-9\s,.\-eE]+$/, 'Icono inválido')
+      .nullable()
+      .optional(),
+    iconKey: z
+      .string()
+      .regex(/^projects\/[\w.-]+$/, 'Archivo inválido')
+      .nullable()
+      .optional(),
+  })
+  .refine((s) => s.kind !== 'custom' || !!s.label, { message: 'Ponle nombre a cada red que añadas.' })
+  // El nombre y el icono propios solo existen en las redes creadas por ti.
+  .transform(({ kind, url, label, iconPath, iconKey }) => (kind === 'custom' ? { kind, url, label, iconPath: iconPath ?? null, iconKey: iconKey ?? null } : { kind, url }))
   .transform((s) => (s.kind === 'email' && !s.url.startsWith('mailto:') && s.url.includes('@') ? { ...s, url: `mailto:${s.url}` } : s))
   .refine((s) => (s.kind === 'email' ? /^mailto:\S+@\S+\.\S+$/.test(s.url) : /^https?:\/\/\S+\.\S+/.test(s.url)), {
     message: 'Revisa los enlaces de tus redes: deben empezar con https:// (o ser un correo válido).',
@@ -14,8 +36,14 @@ const socialSchema = z
 
 export const HOME_PAGES = ['PROJECTS', 'PORTFOLIO'] as const
 
-export const socialsSchema = z.array(socialSchema).max(12)
+export const socialsSchema = z.array(socialSchema).max(24)
 type Social = z.infer<typeof socialSchema>
+
+export function readSocials(value: unknown): Social[] {
+  const parsed = socialsSchema.safeParse(value ?? [])
+  return parsed.success ? parsed.data : []
+}
+export const socialKeys = (socials: Social[]): string[] => socials.flatMap((s) => ('iconKey' in s && s.iconKey ? [s.iconKey] : []))
 
 /** Perfil público: encabezado, redes, habilidades agrupadas y el contenido del portafolio. */
 export async function readSite(db: Db, mediaUrl: MediaUrl) {
@@ -27,8 +55,7 @@ export async function readSite(db: Db, mediaUrl: MediaUrl) {
       include: { _count: { select: { projects: { where: { project: { status: 'PUBLISHED' } } } } } },
     }),
   ])
-  const parsed = socialsSchema.safeParse(site?.socials ?? [])
-  const socials: Social[] = parsed.success ? parsed.data : []
+  const socials = readSocials(site?.socials).map((s) => ('iconKey' in s ? { ...s, iconUrl: s.iconKey ? mediaUrl(s.iconKey) : null } : s))
 
   // Grupos en orden alfabético; las habilidades sin grupo van al final.
   const groups = new Map<string, ReturnType<typeof skillOf>[]>()

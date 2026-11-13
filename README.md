@@ -35,6 +35,7 @@ Se llena en la sección **Portafolio** del panel. Lo que quede vacío no se mues
 | Habilidades   | Sección **Habilidades**: pirámide por nivel, o agrupadas por área           |
 | Proyectos     | Los 4 primeros proyectos publicados, en el orden del panel                  |
 | Trayectoria   | Trabajos, estudios, certificaciones y logros, como un camino que se traza al bajar |
+| Galería       | Imágenes por categorías que tú creas (certificados, cursos, eventos, instalaciones…); cada categoría es una pestaña |
 | Servicios     | Lo que alguien puede encargarte                                             |
 | Contacto      | Título, mensaje, correo y tus redes                                         |
 
@@ -87,7 +88,9 @@ con buscador.
   la página de proyectos ya filtrada. La página de proyectos no las repite: ahí el
   filtro es la barra de etiquetas, con el número de proyectos de cada una.
 - **Redes sociales**: se configuran en Ajustes y aparecen como iconos junto a tu
-  usuario y en el contacto del portafolio. Tu GitHub además se enlaza en los créditos de cada proyecto.
+  usuario y en el contacto del portafolio. Además de las conocidas puedes crear
+  las tuyas, con nombre e icono (de la librería o una imagen propia, como en las
+  etiquetas). Todas se abren en una pestaña nueva. Tu GitHub además se enlaza en los créditos de cada proyecto.
 - **Créditos**: en cada proyecto indicas si es tuyo o si colaboraste, tu papel, y
   las demás personas con su enlace. Si el enlace es un perfil de GitHub se muestra
   su foto.

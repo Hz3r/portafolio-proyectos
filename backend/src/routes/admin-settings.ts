@@ -2,8 +2,8 @@ import argon2 from 'argon2'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Deps } from '../app.ts'
-import { portfolioSchema, readPortfolio } from '../portfolio.ts'
-import { HOME_PAGES, readSite, socialsSchema } from '../site.ts'
+import { portfolioKeys, portfolioSchema, readPortfolio } from '../portfolio.ts'
+import { HOME_PAGES, readSite, readSocials, socialKeys, socialsSchema } from '../site.ts'
 import { invalid } from './admin-projects.ts'
 
 const siteSchema = z
@@ -33,14 +33,16 @@ export function adminSettingsRoutes({ db, mediaUrl, storage }: Deps) {
   app.patch('/site', async (c) => {
     const parsed = siteSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
-    const before = parsed.data.portfolio ? readPortfolio((await db.siteSettings.findUnique({ where: { id: 1 } }))?.portfolio) : null
+    const before = await db.siteSettings.findUnique({ where: { id: 1 } })
     await db.siteSettings.upsert({ where: { id: 1 }, update: parsed.data, create: { id: 1, ...parsed.data } })
-    // La foto o el currículum reemplazados ya no se usan.
-    if (before && parsed.data.portfolio) {
-      const { avatarKey, cvKey } = parsed.data.portfolio
-      const stale = [before.avatarKey !== avatarKey && before.avatarKey, before.cvKey !== cvKey && before.cvKey].filter((k): k is string => !!k)
-      if (stale.length) await storage.remove(stale).catch((e) => console.error('No se pudo borrar el archivo', e))
-    }
+    // Fotos, currículum, imágenes de la galería e iconos de redes que ya no se usan.
+    const { portfolio, socials } = parsed.data
+    const kept = new Set([...(portfolio ? portfolioKeys(portfolio) : []), ...(socials ? socialKeys(socials) : [])])
+    const stale = [
+      ...(portfolio ? portfolioKeys(readPortfolio(before?.portfolio)) : []),
+      ...(socials ? socialKeys(readSocials(before?.socials)) : []),
+    ].filter((k) => !kept.has(k))
+    if (stale.length) await storage.remove(stale).catch((e) => console.error('No se pudo borrar el archivo', e))
     return c.json(await readSite(db, mediaUrl))
   })
 

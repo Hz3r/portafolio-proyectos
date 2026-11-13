@@ -19,7 +19,7 @@ const initialTag = Astro.url.searchParams.get('tag') ?? ''
   <header class="pt-10 pb-8 sm:pt-16 sm:pb-12">
     <div class="flex items-end justify-between gap-6">
       <h1 class="min-w-0 text-[2rem] leading-none font-semibold tracking-tight sm:text-5xl">
-        {site.link ? <a href={site.link} rel="noopener">{site.handle}</a> : site.handle}<span class="cursor-blink" aria-hidden="true"></span>
+        {site.link ? <a href={site.link} target="_blank" rel="noopener noreferrer">{site.handle}</a> : site.handle}<span class="cursor-blink" aria-hidden="true"></span>
       </h1>
       {count > 0 && (
         <p class="pixel text-dim shrink-0 pb-1 text-right">
