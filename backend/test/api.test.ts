@@ -110,7 +110,8 @@ describe('archivos', () => {
     admin('POST', '/uploads/presign', { filename: 'Mi Foto (1).PNG', contentType, size })
 
   it('aplica formatos y límites de tamaño', async () => {
-    expect((await presign('application/pdf', 10)).status).toBe(400)
+    expect((await presign('application/zip', 10)).status).toBe(400)
+    expect((await presign('application/pdf', 11 * MB)).status).toBe(400)
     expect((await presign('image/svg+xml', 2 * MB)).status).toBe(400)
     expect((await presign('image/svg+xml', 10)).status).toBe(200)
     expect((await presign('image/png', 16 * MB)).status).toBe(400)
@@ -196,7 +197,7 @@ describe('etiquetas', () => {
     await admin('PATCH', `/projects/${p.id}`, { tagIds: [astro.id] })
     const pub = await (await app.request('/projects/t')).json()
     expect(pub.tags).toEqual([
-      { id: astro.id, name: 'Astro', iconPath: 'M1 2h3v4z', iconUrl: null, color: '#BC52EE', skill: false, skillGroup: '' },
+      { id: astro.id, name: 'Astro', iconPath: 'M1 2h3v4z', iconUrl: null, color: '#BC52EE', skill: false, skillGroup: '', skillLevel: 2 },
     ])
     const list = await (await admin('GET', '/tags')).json()
     expect(list.map((t: { name: string; projectCount: number }) => [t.name, t.projectCount])).toEqual([['Astro', 1], ['Web', 0]])
@@ -254,7 +255,7 @@ describe('historia', () => {
 
 describe('ajustes', () => {
   it('el encabezado del sitio se edita desde el panel y se lee en público', async () => {
-    expect(await (await app.request('/site')).json()).toEqual({ handle: '', tagline: '', link: '', socials: [], skills: [] })
+    expect(await (await app.request('/site')).json()).toMatchObject({ handle: '', tagline: '', link: '', socials: [], skills: [], home: 'PROJECTS', portfolio: { name: '', journey: [], avatarUrl: null, cvHref: null } })
     expect((await app.request('/admin/site', json('PATCH', { handle: 'x' }))).status).toBe(401)
     expect((await admin('PATCH', '/site', { link: 'javascript:alert(1)' })).status).toBe(400)
     await admin('PATCH', '/site', { handle: '@hz3r', tagline: 'Cosas que construyo' })
@@ -291,6 +292,47 @@ describe('ajustes', () => {
       ['Frontend', ['Astro:0', 'React:1']],
       ['', ['Figma:0']],
     ])
+  })
+
+  it('guarda el portafolio, la página de inicio y el nivel de las habilidades', async () => {
+    expect((await admin('PATCH', '/site', { home: 'BLOG' })).status).toBe(400)
+    expect((await admin('PATCH', '/site', { portfolio: { cvUrl: 'javascript:alert(1)' } })).status).toBe(400)
+    expect((await admin('PATCH', '/site', { portfolio: { avatarKey: '../secreto' } })).status).toBe(400)
+    expect((await admin('PATCH', '/site', { portfolio: { journey: [{ id: 'a', title: '' }] } })).status).toBe(400)
+
+    await admin('PATCH', '/site', {
+      home: 'PORTFOLIO',
+      portfolio: {
+        name: 'Hz3r',
+        avatarKey: 'projects/yo.png',
+        cvKey: 'projects/cv.pdf',
+        cvUrl: 'https://example.com/cv',
+        journey: [{ id: 'a', kind: 'WORK', title: 'Desarrollador', place: 'Acme', period: '2024 - hoy' }],
+      },
+    })
+    let site = await (await app.request('/site')).json()
+    expect(site.home).toBe('PORTFOLIO')
+    expect(site.portfolio).toMatchObject({
+      name: 'Hz3r',
+      avatarUrl: 'http://api.test/media/projects/yo.png',
+      cvHref: 'http://api.test/media/projects/cv.pdf',
+      journey: [{ kind: 'WORK', title: 'Desarrollador', text: '', url: '' }],
+    })
+
+    // Al reemplazar la foto y quitar el PDF se borran los archivos anteriores; el CV pasa a ser el enlace.
+    await admin('PATCH', '/site', { portfolio: { ...site.portfolio, avatarKey: 'projects/otra.png', cvKey: null } })
+    expect(removed.sort()).toEqual(['projects/cv.pdf', 'projects/yo.png'])
+    site = await (await app.request('/site')).json()
+    expect(site.portfolio.cvHref).toBe('https://example.com/cv')
+    // Editar otro campo no toca el portafolio.
+    await admin('PATCH', '/site', { handle: '@hz3r' })
+    expect((await (await app.request('/site')).json()).portfolio.name).toBe('Hz3r')
+
+    expect((await admin('POST', '/tags', { name: 'Rust', skill: true, skillLevel: 9 })).status).toBe(400)
+    const tag = await (await admin('POST', '/tags', { name: 'Rust', skill: true, skillLevel: 3 })).json()
+    expect(tag.skillLevel).toBe(3)
+    const presign = await admin('POST', '/uploads/presign', { filename: 'cv.pdf', contentType: 'application/pdf', size: 1000 })
+    expect((await presign.json()).kind).toBe('FILE')
   })
 
   it('guarda los créditos de un proyecto', async () => {

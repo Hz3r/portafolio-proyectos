@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Db } from './db.ts'
+import { readPortfolio, serializePortfolio } from './portfolio.ts'
 import { type MediaUrl, serializeTag } from './serialize.ts'
 
 export const SOCIAL_KINDS = ['github', 'linkedin', 'instagram', 'x', 'youtube', 'tiktok', 'twitch', 'discord', 'email', 'web'] as const
@@ -11,10 +12,12 @@ const socialSchema = z
     message: 'Revisa los enlaces de tus redes: deben empezar con https:// (o ser un correo válido).',
   })
 
+export const HOME_PAGES = ['PROJECTS', 'PORTFOLIO'] as const
+
 export const socialsSchema = z.array(socialSchema).max(12)
 type Social = z.infer<typeof socialSchema>
 
-/** Perfil público: encabezado, redes y habilidades agrupadas. */
+/** Perfil público: encabezado, redes, habilidades agrupadas y el contenido del portafolio. */
 export async function readSite(db: Db, mediaUrl: MediaUrl) {
   const [site, skills] = await Promise.all([
     db.siteSettings.findUnique({ where: { id: 1 } }),
@@ -38,6 +41,8 @@ export async function readSite(db: Db, mediaUrl: MediaUrl) {
     tagline: site?.tagline ?? '',
     link: site?.link ?? '',
     socials,
+    home: site?.home === 'PORTFOLIO' ? 'PORTFOLIO' : 'PROJECTS',
+    portfolio: serializePortfolio(readPortfolio(site?.portfolio), mediaUrl),
     skills: ordered.map(([group, tags]) => ({ group, tags })),
   }
 }

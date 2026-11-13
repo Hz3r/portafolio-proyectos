@@ -8,7 +8,7 @@ import { serializeMedia } from '../serialize.ts'
 import { invalid } from './admin-projects.ts'
 
 const MB = 1024 * 1024
-export const UPLOAD_RULES: Record<string, { ext: string; kind: 'IMAGE' | 'VIDEO'; max: number }> = {
+export const UPLOAD_RULES: Record<string, { ext: string; kind: 'IMAGE' | 'VIDEO' | 'FILE'; max: number }> = {
   'image/jpeg': { ext: 'jpg', kind: 'IMAGE', max: 15 * MB },
   'image/png': { ext: 'png', kind: 'IMAGE', max: 15 * MB },
   'image/webp': { ext: 'webp', kind: 'IMAGE', max: 15 * MB },
@@ -17,6 +17,8 @@ export const UPLOAD_RULES: Record<string, { ext: string; kind: 'IMAGE' | 'VIDEO'
   'image/svg+xml': { ext: 'svg', kind: 'IMAGE', max: 1 * MB },
   'video/mp4': { ext: 'mp4', kind: 'VIDEO', max: 500 * MB },
   'video/webm': { ext: 'webm', kind: 'VIDEO', max: 500 * MB },
+  // Solo para el currículum del portafolio.
+  'application/pdf': { ext: 'pdf', kind: 'FILE', max: 10 * MB },
 }
 
 const presignSchema = z.object({
@@ -49,7 +51,7 @@ export function adminMediaRoutes({ db, mediaUrl, storage, jwtSecret, publicApiUr
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
     const { contentType, size, filename } = parsed.data
     const rule = UPLOAD_RULES[contentType]
-    if (!rule) return c.json({ error: 'Formato no permitido. Usa jpg, png, webp, avif, gif, svg, mp4 o webm.' }, 400)
+    if (!rule) return c.json({ error: 'Formato no permitido. Usa jpg, png, webp, avif, gif, svg, mp4, webm o pdf.' }, 400)
     if (size > rule.max) {
       return c.json({ error: `El archivo supera el límite de ${rule.max / MB} MB.` }, 400)
     }

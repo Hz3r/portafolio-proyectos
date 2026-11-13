@@ -5,7 +5,7 @@ import Credits from '../../components/Credits.astro'
 import Gallery from '../../components/Gallery'
 import TagBadge from '../../components/TagBadge'
 import Base from '../../layouts/Base.astro'
-import { pad, stillOf } from '../../lib/api'
+import { pad, ROUTES, stillOf } from '../../lib/api'
 import { renderMarkdown } from '../../lib/markdown'
 import { getProject, getProjects, getSite, ownerOf } from '../../lib/server'
 
@@ -54,7 +54,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, st
 
 <Base title={project.title} description={project.summary || undefined} image={stillOf(project.cover)}>
   <nav class="flex items-center justify-between pt-6 pb-8 sm:pt-10 sm:pb-12">
-    <a href="/" class="pixel text-dim hover:text-accent -ml-2 rounded-full px-2 py-3 transition-colors">
+    <a href={ROUTES.projects} class="pixel text-dim hover:text-accent -ml-2 rounded-full px-2 py-3 transition-colors">
       <span aria-hidden="true">◀</span> Proyectos
     </a>
     {index >= 0 && (

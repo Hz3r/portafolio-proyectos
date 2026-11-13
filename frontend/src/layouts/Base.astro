@@ -11,11 +11,13 @@ interface Props {
   title?: string
   description?: string
   image?: string | null
+  /** Título completo, sin añadir el usuario. */
+  fullTitle?: string
 }
 
 const site = await getSite()
 const { title, description = site.tagline, image } = Astro.props
-const fullTitle = title ? `${title} | ${site.handle}` : `${site.handle} | Proyectos`
+const fullTitle = Astro.props.fullTitle ? Astro.props.fullTitle : title ? `${title} | ${site.handle}` : `${site.handle} | Proyectos`
 ---
 
 <!doctype html>

@@ -11,7 +11,7 @@ const TOP = 5
 type Counted = { tag: Tag; count: number }
 
 /** Filtros: los más usados a la vista; el resto, en un panel con buscador. */
-export default function FilterBar({ tags, active, onChange }: { tags: Counted[]; active: string; onChange: (id: string) => void }) {
+export default function FilterBar({ tags, total, active, onChange }: { tags: Counted[]; total: number; active: string; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const row = useRef<HTMLUListElement>(null)
@@ -90,9 +90,10 @@ export default function FilterBar({ tags, active, onChange }: { tags: Counted[];
         <li>
           <button type="button" data-chip={ALL} aria-pressed={active === ALL} onClick={() => onChange(ALL)} className={chip(active === ALL)}>
             Todos
+            <span className={`pixel ${active === ALL ? '' : 'text-accent'}`}>{total}</span>
           </button>
         </li>
-        {shown.map(({ tag }) => {
+        {shown.map(({ tag, count }) => {
           const on = tag.id === active
           return (
             <li key={tag.id}>
@@ -103,6 +104,9 @@ export default function FilterBar({ tags, active, onChange }: { tags: Counted[];
                   </span>
                 )}
                 {tag.name}
+                <span className={`pixel ${on ? '' : 'text-accent'}`} aria-label={`${count} ${count === 1 ? 'proyecto' : 'proyectos'}`}>
+                  {count}
+                </span>
               </button>
             </li>
           )
