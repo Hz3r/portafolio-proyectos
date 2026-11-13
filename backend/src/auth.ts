@@ -31,6 +31,7 @@ export function requireAdmin(secret: string): MiddlewareHandler {
     try {
       const payload = await verify(token, secret, 'HS256')
       if (payload.kind !== 'session') throw new Error('wrong kind')
+      c.set('userId', String(payload.sub))
     } catch {
       return c.json({ error: 'No autorizado' }, 401)
     }

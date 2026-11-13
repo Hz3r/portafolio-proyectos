@@ -306,6 +306,121 @@
   }
 }
 
+@layer components {
+  /* Cielo de estrellas: dos capas de puntos que suben despacio. Solo se mueve con transform. */
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .stars i {
+    position: absolute;
+    inset: 0 0 -100% 0;
+    background-repeat: repeat;
+    animation: drift 120s linear infinite;
+    will-change: translate;
+  }
+  .stars i:first-child {
+    background-image:
+      radial-gradient(1.5px 1.5px at 20px 30px, rgb(237 237 242 / 0.5) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 130px 90px, rgb(237 237 242 / 0.35) 50%, transparent 51%),
+      radial-gradient(2px 2px at 70px 160px, rgb(158 255 90 / 0.5) 50%, transparent 51%);
+    background-size: 173px 251px;
+  }
+  .stars i:last-child {
+    background-image:
+      radial-gradient(1px 1px at 40px 60px, rgb(237 237 242 / 0.3) 50%, transparent 51%),
+      radial-gradient(1px 1px at 90px 20px, rgb(237 237 242 / 0.22) 50%, transparent 51%),
+      radial-gradient(2px 2px at 10px 110px, rgb(180 140 255 / 0.4) 50%, transparent 51%);
+    background-size: 127px 149px;
+    animation-duration: 200s;
+  }
+
+  /* Mascotas. */
+  .bot {
+    display: block;
+    filter: drop-shadow(0 0 5px rgb(158 255 90 / 0.25));
+  }
+  .bot-eyes {
+    animation: bot-blink 4.2s steps(1) infinite;
+  }
+  .bot-legs-b {
+    visibility: hidden;
+  }
+  .bot-walking .bot-legs-a {
+    animation: bot-step 0.36s steps(1) infinite;
+  }
+  .bot-walking .bot-legs-b {
+    animation: bot-step 0.36s steps(1) infinite reverse;
+  }
+
+  .walkers {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 10;
+    height: 0;
+    pointer-events: none;
+  }
+  .walker {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    animation: walk 46s linear infinite;
+  }
+  .walker > span {
+    display: block;
+    animation: walk-turn 46s steps(1) infinite;
+  }
+  .walker-2,
+  .walker-2 > span {
+    animation-duration: 71s;
+    animation-delay: -30s;
+  }
+}
+
+@keyframes drift {
+  to {
+    translate: 0 -50%;
+  }
+}
+
+@keyframes walk {
+  0%,
+  100% {
+    translate: -40px 0;
+  }
+  50% {
+    translate: 100vw 0;
+  }
+}
+
+@keyframes walk-turn {
+  0% {
+    scale: 1 1;
+  }
+  50% {
+    scale: -1 1;
+  }
+}
+
+@keyframes bot-step {
+  50% {
+    visibility: hidden;
+  }
+}
+
+@keyframes bot-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0.15;
+  }
+}
+
 @keyframes eq {
   from {
     scale: 1 0.35;
@@ -337,6 +452,12 @@
     transition-duration: 0.01ms !important;
   }
   .cursor-blink {
+    animation: none;
+  }
+  .walkers {
+    display: none;
+  }
+  .stars i {
     animation: none;
   }
 }

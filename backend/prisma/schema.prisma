@@ -87,3 +87,11 @@ model AdminUser {
   passwordHash String
   createdAt    DateTime @default(now())
 }
+
+/// Datos del encabezado del sitio. Una sola fila (id = 1).
+model SiteSettings {
+  id      Int    @id @default(1)
+  handle  String @default("")
+  tagline String @default("")
+  link    String @default("")
+}

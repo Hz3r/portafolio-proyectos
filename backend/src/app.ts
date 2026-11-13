@@ -4,6 +4,7 @@ import { requireAdmin, verifyUpload } from './auth.ts'
 import type { Db } from './db.ts'
 import { adminMediaRoutes } from './routes/admin-media.ts'
 import { adminProjectRoutes } from './routes/admin-projects.ts'
+import { adminSettingsRoutes } from './routes/admin-settings.ts'
 import { adminTagRoutes } from './routes/admin-tags.ts'
 import { authRoutes } from './routes/auth.ts'
 import { publicRoutes } from './routes/public.ts'
@@ -47,11 +48,12 @@ export function createApp(config: AppConfig) {
     return c.json({ ok: true })
   })
 
-  const admin = new Hono()
+  const admin = new Hono<{ Variables: { userId: string } }>()
   admin.use('*', requireAdmin(config.jwtSecret))
   admin.route('/', adminProjectRoutes(deps))
   admin.route('/', adminMediaRoutes(deps))
   admin.route('/', adminTagRoutes(deps))
+  admin.route('/', adminSettingsRoutes(deps))
   app.route('/admin', admin)
 
   app.notFound((c) => c.json({ error: 'No encontrado' }, 404))
