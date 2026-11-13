@@ -26,6 +26,8 @@
 
   body {
     min-height: 100dvh;
+    /* Una palabra larga sin espacios se parte en vez de ensanchar la página. */
+    overflow-wrap: anywhere;
     font-family: var(--font-sans);
     font-feature-settings: 'ss01', 'cv11';
   }
@@ -338,22 +340,18 @@
     animation-duration: 200s;
   }
 
-  /* Mascotas. */
-  .bot {
+  /* Personajes. */
+  .sprite {
     display: block;
-    filter: drop-shadow(0 0 5px rgb(158 255 90 / 0.25));
   }
-  .bot-eyes {
-    animation: bot-blink 4.2s steps(1) infinite;
-  }
-  .bot-legs-b {
+  .sprite-legs-b {
     visibility: hidden;
   }
-  .bot-walking .bot-legs-a {
-    animation: bot-step 0.36s steps(1) infinite;
+  .walker .sprite-legs-a {
+    animation: sprite-step 0.36s steps(1) infinite;
   }
-  .bot-walking .bot-legs-b {
-    animation: bot-step 0.36s steps(1) infinite reverse;
+  .walker .sprite-legs-b {
+    animation: sprite-step 0.36s steps(1) infinite reverse;
   }
 
   .walkers {
@@ -365,18 +363,23 @@
   }
   .walker {
     position: absolute;
-    bottom: 0;
+    bottom: var(--lift);
     left: 0;
-    animation: walk 46s linear infinite;
+    animation: walk var(--d) linear var(--delay) infinite;
   }
-  .walker > span {
+  .walker-turn {
     display: block;
-    animation: walk-turn 46s steps(1) infinite;
+    animation: walk-turn var(--d) steps(1) var(--delay) infinite;
   }
-  .walker-2,
-  .walker-2 > span {
-    animation-duration: 71s;
-    animation-delay: -30s;
+  .walker-body {
+    display: block;
+  }
+  .walker-body.bob {
+    animation: bob 2.6s ease-in-out infinite alternate;
+  }
+  .walker-body.hop {
+    transform-origin: bottom;
+    animation: hop 0.9s ease-in-out infinite;
   }
 }
 
@@ -405,19 +408,27 @@
   }
 }
 
-@keyframes bot-step {
+@keyframes sprite-step {
   50% {
     visibility: hidden;
   }
 }
 
-@keyframes bot-blink {
+@keyframes bob {
+  to {
+    translate: 0 -7px;
+  }
+}
+
+@keyframes hop {
   0%,
   100% {
-    opacity: 1;
+    scale: 1.12 0.84;
+    translate: 0 0;
   }
-  96% {
-    opacity: 0.15;
+  45% {
+    scale: 0.92 1.1;
+    translate: 0 -9px;
   }
 }
 

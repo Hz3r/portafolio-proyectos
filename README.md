@@ -50,6 +50,17 @@ tecnologías y cifras principales, y un botón para entrar a la historia complet
 Los filtros muestran las etiquetas más usadas; el resto está en "Más filtros",
 con buscador.
 
+### Habilidades, redes y créditos
+
+- **Habilidades**: al crear o editar una etiqueta puedes marcarla como habilidad y
+  darle un grupo (Frontend, Backend…). La portada las muestra agrupadas; las que
+  tienen proyectos publicados sirven de filtro.
+- **Redes sociales**: se configuran en Ajustes y aparecen como iconos junto a tu
+  usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.
+- **Créditos**: en cada proyecto indicas si es tuyo o si colaboraste, tu papel, y
+  las demás personas con su enlace. Si el enlace es un perfil de GitHub se muestra
+  su foto.
+
 ### Ajustes
 
 En **Ajustes** del panel se edita el perfil del sitio (usuario, descripción y

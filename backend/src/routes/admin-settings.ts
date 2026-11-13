@@ -2,6 +2,7 @@ import argon2 from 'argon2'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Deps } from '../app.ts'
+import { readSite, socialsSchema } from '../site.ts'
 import { invalid } from './admin-projects.ts'
 
 const siteSchema = z
@@ -13,6 +14,7 @@ const siteSchema = z
       .trim()
       .max(500)
       .refine((v) => v === '' || /^https?:\/\/\S+\.\S+/.test(v), 'El enlace debe empezar con http:// o https://'),
+    socials: socialsSchema,
   })
   .partial()
 
@@ -22,14 +24,14 @@ const accountSchema = z.object({
   newPassword: z.string().min(8, 'La contraseña nueva debe tener al menos 8 caracteres').max(200).optional(),
 })
 
-export function adminSettingsRoutes({ db }: Deps) {
+export function adminSettingsRoutes({ db, mediaUrl }: Deps) {
   const app = new Hono<{ Variables: { userId: string } }>()
 
   app.patch('/site', async (c) => {
     const parsed = siteSchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
-    const site = await db.siteSettings.upsert({ where: { id: 1 }, update: parsed.data, create: { id: 1, ...parsed.data } })
-    return c.json({ handle: site.handle, tagline: site.tagline, link: site.link })
+    await db.siteSettings.upsert({ where: { id: 1 }, update: parsed.data, create: { id: 1, ...parsed.data } })
+    return c.json(await readSite(db, mediaUrl))
   })
 
   app.get('/account', async (c) => {

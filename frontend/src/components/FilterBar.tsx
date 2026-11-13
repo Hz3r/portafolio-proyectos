@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Tag } from '../lib/api'
-import Bot from './Bot'
+import Sprite from './Sprite'
 import Sheet from './Sheet'
 import { TagIcon } from './TagBadge'
 
@@ -84,7 +84,7 @@ export default function FilterBar({ tags, active, onChange }: { tags: Counted[];
       <ul ref={row} className="relative flex gap-2 overflow-x-auto px-5 pt-8 pb-1 [scrollbar-width:none] sm:px-0">
         <li ref={bot} className="pointer-events-none absolute top-0 left-0 opacity-0 transition-opacity duration-500" aria-hidden="true">
           <span ref={hop} className="block">
-            <Bot />
+            <Sprite kind="robot" />
           </span>
         </li>
         <li>

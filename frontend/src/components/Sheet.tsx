@@ -45,7 +45,7 @@ export default function Sheet({
         aria-label={label}
         tabIndex={-1}
         className={`bg-surface border-line relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border outline-none sm:rounded-3xl ${
-          wide ? 'sm:max-w-2xl lg:max-w-5xl' : 'sm:max-w-lg'
+          wide ? 'sm:max-w-2xl lg:max-w-6xl' : 'sm:max-w-lg'
         }`}
         initial={{ y: 40, opacity: 0.6 }}
         animate={{ y: 0, opacity: 1 }}

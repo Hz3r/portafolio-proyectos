@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Deps } from '../app.ts'
 import { projectInclude, serializeProject } from '../serialize.ts'
+import { readSite } from '../site.ts'
 
 export function publicRoutes({ db, mediaUrl, storage }: Deps) {
   const app = new Hono()
@@ -23,10 +24,7 @@ export function publicRoutes({ db, mediaUrl, storage }: Deps) {
     return c.json(serializeProject(project, mediaUrl))
   })
 
-  app.get('/site', async (c) => {
-    const site = await db.siteSettings.findUnique({ where: { id: 1 } })
-    return c.json({ handle: site?.handle ?? '', tagline: site?.tagline ?? '', link: site?.link ?? '' })
-  })
+  app.get('/site', async (c) => c.json(await readSite(db, mediaUrl)))
 
   // El bucket es privado: redirigimos a una URL firmada de lectura.
   app.get('/media/*', async (c) => {

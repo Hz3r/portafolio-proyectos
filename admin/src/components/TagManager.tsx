@@ -40,6 +40,7 @@ export default function TagManager({ initial, featured, total }: { initial: Tag[
           tag={editing}
           featured={featured}
           total={total}
+          groups={[...new Set(tags.flatMap((t) => t.skillGroup || []))]}
           onCancel={editing ? resetForm : undefined}
           onSaved={(tag) => {
             setTags((list) => sorted([...list.filter((t) => t.id !== tag.id), { projectCount: 0, ...tag }]))
@@ -83,6 +84,7 @@ export default function TagManager({ initial, featured, total }: { initial: Tag[
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{t.name}</span>
                   <span className="text-dim text-xs">
+                    {t.skill && <span className="text-accent">Habilidad{t.skillGroup ? ` de ${t.skillGroup}` : ''}. </span>}
                     {t.projectCount ? `${t.projectCount} ${t.projectCount === 1 ? 'proyecto' : 'proyectos'}` : 'Sin usar'}
                   </span>
                 </span>

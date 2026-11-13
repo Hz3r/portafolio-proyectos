@@ -1,4 +1,4 @@
-import type { Project } from './api'
+import type { Owner, Project, SkillGroup, Social } from './api'
 
 const API_URL = (process.env.API_URL ?? import.meta.env.API_URL ?? 'http://localhost:4000').replace(/\/$/, '')
 
@@ -25,7 +25,7 @@ export async function getProject(slug: string): Promise<Project | null | 'error'
   return status === 404 ? null : 'error'
 }
 
-export type Site = { handle: string; tagline: string; link: string }
+export type Site = { handle: string; tagline: string; link: string; socials: Social[]; skills: SkillGroup[] }
 
 const env = (name: string) => process.env[name] ?? import.meta.env[name] ?? ''
 let cached: { at: number; site: Site } | null = null
@@ -38,7 +38,14 @@ export async function getSite(): Promise<Site> {
     handle: data?.handle || env('SITE_HANDLE') || 'Proyectos',
     tagline: data?.tagline || env('SITE_TAGLINE'),
     link: data?.link || env('SITE_LINK'),
+    socials: data?.socials ?? [],
+    skills: data?.skills ?? [],
   }
   if (data) cached = { at: Date.now(), site }
   return site
 }
+
+export const ownerOf = (site: Site): Owner => ({
+  handle: site.handle,
+  github: site.socials.find((s) => s.kind === 'github')?.url ?? null,
+})

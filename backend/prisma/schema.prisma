@@ -29,6 +29,11 @@ model Project {
   repoUrl      String?
   tags         ProjectTag[]
   sections     Json          @default("[]")
+  /// AUTHOR: el proyecto es mío. COLLABORATOR: participé en el proyecto de otra persona.
+  myRole       String        @default("AUTHOR")
+  myRoleNote   String        @default("")
+  /// Otras personas del proyecto: [{ name, url, role }]
+  people       Json          @default("[]")
   year         Int?
   order        Int           @default(0)
   coverMediaId String?       @unique
@@ -66,6 +71,9 @@ model Tag {
   /// Imagen subida al bucket, alternativa a iconPath.
   iconKey   String?
   color     String?
+  /// Se muestra como habilidad en la portada, dentro de este grupo.
+  skill      Boolean      @default(false)
+  skillGroup String       @default("")
   projects  ProjectTag[]
   createdAt DateTime     @default(now())
 }
@@ -94,4 +102,6 @@ model SiteSettings {
   handle  String @default("")
   tagline String @default("")
   link    String @default("")
+  /// Redes sociales: [{ kind, url }]
+  socials Json   @default("[]")
 }

@@ -8,7 +8,15 @@ import { uploadFile } from '@/lib/upload'
 import IconPicker from './IconPicker'
 import { TagIcon } from './ui'
 
-type Draft = { name: string; iconPath: string | null; color: string | null; file: File | null; iconUrl: string | null }
+type Draft = {
+  name: string
+  iconPath: string | null
+  color: string | null
+  file: File | null
+  iconUrl: string | null
+  skill: boolean
+  skillGroup: string
+}
 const ICON_TYPES = 'image/svg+xml,image/png,image/webp,image/jpeg'
 
 /** Crea o edita una etiqueta: nombre libre, icono de la librería o imagen propia. */
@@ -17,9 +25,12 @@ export default function TagForm({
   initialName = '',
   featured,
   total,
+  groups = [],
   onSaved,
   onCancel,
 }: {
+  /** Grupos de habilidades ya usados, para sugerirlos. */
+  groups?: string[]
   tag?: Tag | null
   initialName?: string
   featured: IconHit[]
@@ -33,6 +44,8 @@ export default function TagForm({
     color: tag?.color ?? null,
     file: null,
     iconUrl: tag?.iconUrl ?? null,
+    skill: tag?.skill ?? false,
+    skillGroup: tag?.skillGroup ?? '',
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +72,8 @@ export default function TagForm({
         name: draft.name,
         iconPath: image ? null : draft.iconPath,
         color: image ? null : draft.color,
+        skill: draft.skill,
+        skillGroup: draft.skill ? draft.skillGroup : '',
         ...(iconKey !== undefined ? { iconKey } : {}),
       }
       const res = tag ? await updateTag(tag.id, input) : await createTag(input)
@@ -131,6 +146,39 @@ export default function TagForm({
             setDraft({ ...draft, file, iconPath: null, color: null, iconUrl: null })
           }}
         />
+      </div>
+
+      <div className="border-line mt-5 border-t pt-5">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="accent-accent mt-0.5 size-4 shrink-0"
+            checked={draft.skill}
+            onChange={(e) => setDraft({ ...draft, skill: e.target.checked })}
+          />
+          <span>
+            <span className="block text-sm font-medium">Es una de mis habilidades</span>
+            <span className="text-dim block text-xs">Aparece en la sección de habilidades de la portada.</span>
+          </span>
+        </label>
+        {draft.skill && (
+          <div className="mt-3">
+            <input
+              className="field !bg-bg"
+              list="skill-groups"
+              value={draft.skillGroup}
+              onChange={(e) => setDraft({ ...draft, skillGroup: e.target.value })}
+              maxLength={40}
+              placeholder="Grupo: Frontend, Backend, Herramientas…"
+              aria-label="Grupo de la habilidad"
+            />
+            <datalist id="skill-groups">
+              {[...new Set([...groups, 'Frontend', 'Backend', 'Bases de datos', 'Herramientas', 'Diseño', 'IA'])].map((g) => (
+                <option key={g} value={g} />
+              ))}
+            </datalist>
+          </div>
+        )}
       </div>
 
       {error && (

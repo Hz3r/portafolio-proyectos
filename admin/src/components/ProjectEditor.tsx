@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { deleteProject, updateProject } from '@/app/actions'
 import type { IconHit } from '@/lib/icons'
-import type { Project, Section, Tag } from '@/lib/types'
+import type { Person, Project, Section, Tag } from '@/lib/types'
 import MediaManager from './MediaManager'
 import StoryEditor from './StoryEditor'
 import TagForm from './TagForm'
@@ -23,6 +23,9 @@ type Form = {
   status: Project['status']
   tagIds: string[]
   sections: Section[]
+  myRole: Project['myRole']
+  myRoleNote: string
+  people: Person[]
 }
 
 type Tab = 'general' | 'historia' | 'archivos'
@@ -37,6 +40,9 @@ const toForm = (p: Project): Form => ({
   year: p.year ? String(p.year) : '',
   status: p.status,
   tagIds: p.tags.map((t) => t.id),
+  myRole: p.myRole,
+  myRoleNote: p.myRoleNote,
+  people: p.people,
   // La API añade `media` resuelto a las galerías; aquí solo interesan los ids.
   sections: p.sections.map((s) => (s.type === 'MEDIA' ? { id: s.id, type: s.type, title: s.title, mediaIds: s.mediaIds, caption: s.caption } : s)),
 })
@@ -122,6 +128,9 @@ export default function ProjectEditor({
         year,
         tagIds: form.tagIds,
         sections: form.sections,
+        myRole: form.myRole,
+        myRoleNote: form.myRoleNote,
+        people: form.people.filter((person) => person.name.trim()),
       })
       if (!res.ok) return setMessage({ kind: 'error', text: res.error })
       const next = toForm(res.data)
@@ -352,6 +361,75 @@ export default function ProjectEditor({
             <p className="hint">Cambiarla rompe los enlaces ya compartidos.</p>
           </div>
         </div>
+
+        <fieldset className="border-line mt-10 border-t pt-8">
+          <legend className="sr-only">Créditos</legend>
+          <h2 className="text-lg font-semibold">Créditos</h2>
+          <p className="text-dim mt-1 text-sm">
+            Tú apareces siempre, enlazado al GitHub que pusiste en Ajustes. Añade aquí a las demás personas.
+          </p>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                ['AUTHOR', 'Es mi proyecto', 'Lo creé yo; las demás personas son colaboradoras.'],
+                ['COLLABORATOR', 'Soy colaborador', 'El proyecto es de otra persona o equipo y yo participé.'],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                  form.myRole === value ? 'border-accent bg-accent/5' : 'border-line hover:border-dim'
+                }`}
+              >
+                <input type="radio" name="myRole" className="accent-accent mt-1" checked={form.myRole === value} onChange={() => set('myRole', value)} />
+                <span>
+                  <span className="block font-medium">{label}</span>
+                  <span className="text-dim block text-sm">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-5">
+            <label className="label" htmlFor="role-note">
+              Tu papel
+            </label>
+            <input
+              id="role-note"
+              className="field"
+              value={form.myRoleNote}
+              onChange={(e) => set('myRoleNote', e.target.value)}
+              maxLength={120}
+              placeholder={form.myRole === 'AUTHOR' ? 'Diseño y desarrollo completo' : 'Backend y base de datos'}
+            />
+          </div>
+
+          <p className="label mt-6">{form.myRole === 'AUTHOR' ? 'Colaboradores' : 'Equipo del proyecto'}</p>
+          <ul className="space-y-2">
+            {form.people.map((person, i) => {
+              const patch = (next: Partial<Person>) => set('people', form.people.map((x, j) => (j === i ? { ...x, ...next } : x)))
+              return (
+                <li key={i} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_1fr_auto] sm:items-center">
+                  <input className="field" value={person.name} onChange={(e) => patch({ name: e.target.value })} maxLength={60} placeholder="Nombre o @usuario" aria-label="Nombre" />
+                  <input className="field" value={person.url} onChange={(e) => patch({ url: e.target.value })} inputMode="url" placeholder="https://github.com/usuario" aria-label="Enlace" />
+                  <input className="field" value={person.role} onChange={(e) => patch({ role: e.target.value })} maxLength={60} placeholder={form.myRole === 'AUTHOR' ? 'Diseño, QA…' : 'Autor, líder…'} aria-label="Papel" />
+                  <button type="button" className="text-dim hover:text-danger justify-self-start px-1 py-1 text-sm" onClick={() => set('people', form.people.filter((_, j) => j !== i))}>
+                    Quitar
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <button
+            type="button"
+            className="btn mt-3 !py-1.5 text-sm"
+            disabled={form.people.length >= 12}
+            onClick={() => set('people', [...form.people, { name: '', url: '', role: '' }])}
+          >
+            Añadir persona
+          </button>
+        </fieldset>
 
         <div className="border-line mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5">
           <div>

@@ -1,0 +1,28 @@
+---
+import type { Social } from '../lib/api'
+import { SOCIAL_ICONS } from '../lib/social-icons'
+
+interface Props {
+  socials: Social[]
+}
+const items = Astro.props.socials.flatMap((s) => (SOCIAL_ICONS[s.kind] ? [{ ...s, ...SOCIAL_ICONS[s.kind] }] : []))
+---
+
+{items.length > 0 && (
+  <ul class="flex flex-wrap gap-2">
+    {items.map((s) => (
+      <li>
+        <a
+          href={s.url}
+          target={s.kind === 'email' ? undefined : '_blank'}
+          rel="noopener noreferrer me"
+          aria-label={s.label}
+          title={s.label}
+          class="border-line bg-surface/70 text-dim hover:border-accent hover:text-accent flex size-11 items-center justify-center rounded-full border transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={s.path} /></svg>
+        </a>
+      </li>
+    ))}
+  </ul>
+)}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { type Site, updateAccount, updateSite } from '@/app/actions'
+import { SOCIAL_KINDS, type Social } from '@/lib/types'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
 const Status = ({ message }: { message: Message }) =>
@@ -30,7 +31,7 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
   const saveSite = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
-      const res = await updateSite(site)
+      const res = await updateSite({ ...site, socials: site.socials.filter((s) => s.url.trim()) })
       if (!res.ok) return setSiteMessage({ kind: 'error', text: res.error })
       setSite(res.data)
       setSavedSite(res.data)
@@ -85,6 +86,65 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
             <p className="hint">Opcional. A dónde lleva tocar tu usuario en el sitio.</p>
           </div>
         </div>
+
+        <fieldset className="border-line mt-7 border-t pt-6">
+          <legend className="sr-only">Redes sociales</legend>
+          <p className="text-sm font-medium">Redes sociales</p>
+          <p className="text-dim mt-1 text-sm">
+            Aparecen como iconos junto a tu usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {site.socials.map((social, i) => {
+              const patch = (next: Partial<Social>) => {
+                setSite({ ...site, socials: site.socials.map((s, j) => (j === i ? { ...s, ...next } : s)) })
+                setSiteMessage(null)
+              }
+              return (
+                <li key={i} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <select
+                    className="field !bg-bg !w-auto shrink-0 !py-2.5"
+                    value={social.kind}
+                    onChange={(e) => patch({ kind: e.target.value as Social['kind'] })}
+                    aria-label="Red social"
+                  >
+                    {Object.entries(SOCIAL_KINDS).map(([kind, label]) => (
+                      <option key={kind} value={kind}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className="field !bg-bg min-w-0 flex-1 basis-40"
+                    value={social.url}
+                    onChange={(e) => patch({ url: e.target.value })}
+                    inputMode={social.kind === 'email' ? 'email' : 'url'}
+                    placeholder={social.kind === 'email' ? 'tu@correo.com' : social.kind === 'github' ? 'https://github.com/tu_usuario' : 'https://'}
+                    aria-label={`Enlace de ${SOCIAL_KINDS[social.kind]}`}
+                  />
+                  <button
+                    type="button"
+                    className="text-dim hover:text-danger px-1 py-2 text-sm"
+                    onClick={() => (setSite({ ...site, socials: site.socials.filter((_, j) => j !== i) }), setSiteMessage(null))}
+                  >
+                    Quitar
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <button
+            type="button"
+            className="btn mt-3 !py-1.5 text-sm"
+            disabled={site.socials.length >= 12}
+            onClick={() => {
+              const used = new Set(site.socials.map((s) => s.kind))
+              const kind = (Object.keys(SOCIAL_KINDS) as Social['kind'][]).find((k) => !used.has(k)) ?? 'web'
+              setSite({ ...site, socials: [...site.socials, { kind, url: '' }] })
+            }}
+          >
+            Añadir red
+          </button>
+        </fieldset>
 
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <button className="btn btn-primary" disabled={pending || !siteDirty}>
