@@ -50,6 +50,29 @@ export const portfolioSchema = z.object({
     .array(z.object({ id, title: z.string().trim().min(1, 'Cada servicio necesita un título').max(60), text: text(300) }))
     .max(8)
     .default([]),
+  /** Galería por categorías: certificados, cursos, eventos, instalaciones… */
+  gallery: z
+    .array(
+      z.object({
+        id,
+        name: z.string().trim().min(1, 'Cada categoría de la galería necesita un nombre').max(40),
+        items: z
+          .array(
+            z.object({
+              id,
+              key: z.string().regex(/^projects\/[\w.-]+$/, 'Archivo inválido'),
+              title: text(80),
+              text: text(300),
+              width: z.number().int().positive().max(20000).nullable().default(null),
+              height: z.number().int().positive().max(20000).nullable().default(null),
+            }),
+          )
+          .max(60)
+          .default([]),
+      }),
+    )
+    .max(12)
+    .default([]),
   contactTitle: text(100),
   contactText: text(300),
   contactEmail: z
@@ -67,11 +90,16 @@ export function readPortfolio(value: unknown): Portfolio {
   return parsed.success ? parsed.data : portfolioSchema.parse({})
 }
 
+/** Archivos del bucket que usa el portafolio; sirve para borrar los que dejan de usarse. */
+export const portfolioKeys = (p: Portfolio): string[] =>
+  [p.avatarKey, p.cvKey, ...p.gallery.flatMap((c) => c.items.map((i) => i.key))].filter((k): k is string => !!k)
+
 /** El portafolio con las direcciones de sus archivos. `cvHref` es el PDF subido o, si no hay, el enlace. */
 export function serializePortfolio(p: Portfolio, url: MediaUrl) {
   return {
     ...p,
     avatarUrl: p.avatarKey ? url(p.avatarKey) : null,
     cvHref: p.cvKey ? url(p.cvKey) : p.cvUrl || null,
+    gallery: p.gallery.map((c) => ({ ...c, items: c.items.map((i) => ({ ...i, url: url(i.key) })) })),
   }
 }

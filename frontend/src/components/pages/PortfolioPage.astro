@@ -4,6 +4,7 @@ import SocialLinks from '../SocialLinks.astro'
 import TagBadge from '../TagBadge'
 import Journey from '../portfolio/Journey'
 import Nav from '../portfolio/Nav'
+import PhotoGallery from '../portfolio/PhotoGallery'
 import Orbit from '../portfolio/Orbit.astro'
 import SkillPyramid from '../portfolio/SkillPyramid'
 import Base from '../../layouts/Base.astro'
@@ -24,6 +25,7 @@ const [lead, ...rest] = featured
 const email = p.contactEmail || site.socials.find((s) => s.kind === 'email')?.url.replace(/^mailto:/, '') || ''
 const about = p.about ? renderMarkdown(p.about) : ''
 const hasAbout = !!about || p.stats.length > 0
+const gallery = p.gallery.filter((c) => c.items.length > 0)
 const hasContact = !!email || site.socials.length > 0
 
 const links = [
@@ -31,6 +33,7 @@ const links = [
   skills.length > 0 && { id: 'habilidades', label: 'Habilidades' },
   featured.length > 0 && { id: 'proyectos', label: 'Proyectos' },
   p.journey.length > 0 && { id: 'trayectoria', label: 'Trayectoria' },
+  gallery.length > 0 && { id: 'galeria', label: 'Galería' },
   p.services.length > 0 && { id: 'servicios', label: 'Servicios' },
   hasContact && { id: 'contacto', label: 'Contacto' },
 ].filter((l) => !!l)
@@ -162,6 +165,13 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
       <section id="trayectoria" class="scroll-mt-24">
         <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl lg:text-center">Trayectoria</h2>
         <div class="mt-12 sm:mt-16"><Journey client:visible items={p.journey} /></div>
+      </section>
+    )}
+
+    {gallery.length > 0 && (
+      <section id="galeria" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Galería</h2>
+        <div class="mt-6"><PhotoGallery client:visible categories={gallery} /></div>
       </section>
     )}
 

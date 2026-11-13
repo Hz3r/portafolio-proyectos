@@ -1,6 +1,7 @@
 import { readSite } from '@/app/actions'
 import SettingsForms from '@/components/SettingsForms'
 import { admin } from '@/lib/api'
+import { findIcons, ICON_COUNT } from '@/lib/icons'
 
 export default async function SettingsPage() {
   const [account, site] = await Promise.all([
@@ -11,7 +12,7 @@ export default async function SettingsPage() {
     <main className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight">Ajustes</h1>
       {account.ok && site ? (
-        <SettingsForms site={site} email={account.data.email} siteUrl={process.env.SITE_URL?.replace(/\/$/, '') ?? null} />
+        <SettingsForms site={site} email={account.data.email} siteUrl={process.env.SITE_URL?.replace(/\/$/, '') ?? null} featured={findIcons('')} iconTotal={ICON_COUNT} />
       ) : (
         <p role="alert" className="border-danger/40 text-danger mt-8 rounded-2xl border p-5">
           {account.ok ? 'No se pudieron cargar los ajustes del sitio. Recarga la página.' : account.error}

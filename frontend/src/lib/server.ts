@@ -49,6 +49,7 @@ const EMPTY: Portfolio = {
   stats: [],
   journey: [],
   services: [],
+  gallery: [],
   contactTitle: '',
   contactText: '',
   contactEmail: '',

@@ -1,7 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { type Site, updateAccount, updateSite } from '@/app/actions'
+import { useRef, useState, useTransition } from 'react'
+import { presignUpload, type Site, updateAccount, updateSite } from '@/app/actions'
+import type { IconHit } from '@/lib/icons'
+import { uploadFile } from '@/lib/upload'
+import IconPicker from './IconPicker'
+import { TagIcon } from './ui'
 import { SOCIAL_KINDS, type Social } from '@/lib/types'
 
 type Message = { kind: 'ok' | 'error'; text: string } | null
@@ -21,7 +25,23 @@ const HOMES: { id: Site['home']; label: string; path: string; hint: string }[] =
   { id: 'PORTFOLIO', label: 'Portafolio', path: '/portafolio', hint: 'La página completa: quién eres, habilidades, trayectoria y contacto.' },
 ]
 
-export default function SettingsForms({ site: initial, email: initialEmail, siteUrl }: { site: Site; email: string; siteUrl: string | null }) {
+export default function SettingsForms({
+  site: initial,
+  email: initialEmail,
+  siteUrl,
+  featured,
+  iconTotal,
+}: {
+  site: Site
+  email: string
+  siteUrl: string | null
+  featured: IconHit[]
+  iconTotal: number
+}) {
+  // Qué red propia tiene abierto el selector de icono.
+  const [iconFor, setIconFor] = useState<number | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const iconInput = useRef<HTMLInputElement>(null)
   const [site, setSite] = useState(() => profileOf(initial))
   const [savedSite, setSavedSite] = useState(site)
   const [siteMessage, setSiteMessage] = useState<Message>(null)
@@ -42,6 +62,7 @@ export default function SettingsForms({ site: initial, email: initialEmail, site
     startTransition(async () => {
       const res = await updateSite({ ...site, socials: site.socials.filter((s) => s.url.trim()) })
       if (!res.ok) return setSiteMessage({ kind: 'error', text: res.error })
+      setIconFor(null)
       setSite(profileOf(res.data))
       setSavedSite(profileOf(res.data))
       setSiteMessage({ kind: 'ok', text: 'Perfil guardado. El sitio lo muestra en menos de un minuto.' })
@@ -138,7 +159,8 @@ export default function SettingsForms({ site: initial, email: initialEmail, site
       <form onSubmit={saveSite} className="bg-surface border-line rounded-2xl border p-5 sm:p-6 lg:col-span-2">
         <h2 className="text-lg font-semibold">Redes sociales</h2>
         <p className="text-dim mt-1 text-sm">
-            Aparecen como iconos junto a tu usuario y en el contacto del portafolio. Tu GitHub además se enlaza en los créditos de cada proyecto.
+            Aparecen como iconos junto a tu usuario y en el contacto del portafolio, y se abren en una pestaña nueva. Si una red no está en la
+            lista, créala con su nombre e icono. Tu GitHub además se enlaza en los créditos de cada proyecto.
           </p>
           <ul className="mt-4 space-y-2">
             {site.socials.map((social, i) => {
@@ -146,55 +168,136 @@ export default function SettingsForms({ site: initial, email: initialEmail, site
                 setSite({ ...site, socials: site.socials.map((s, j) => (j === i ? { ...s, ...next } : s)) })
                 setSiteMessage(null)
               }
+              const custom = social.kind === 'custom'
               return (
-                <li key={i} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-                  <select
-                    className="field !bg-bg !w-auto shrink-0 !py-2.5"
-                    value={social.kind}
-                    onChange={(e) => patch({ kind: e.target.value as Social['kind'] })}
-                    aria-label="Red social"
-                  >
-                    {Object.entries(SOCIAL_KINDS).map(([kind, label]) => (
-                      <option key={kind} value={kind}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className="field !bg-bg min-w-0 flex-1 basis-40"
-                    value={social.url}
-                    onChange={(e) => patch({ url: e.target.value })}
-                    inputMode={social.kind === 'email' ? 'email' : 'url'}
-                    placeholder={social.kind === 'email' ? 'tu@correo.com' : social.kind === 'github' ? 'https://github.com/tu_usuario' : 'https://'}
-                    aria-label={`Enlace de ${SOCIAL_KINDS[social.kind]}`}
-                  />
-                  <button
-                    type="button"
-                    className="text-dim hover:text-danger px-1 py-2 text-sm"
-                    onClick={() => (setSite({ ...site, socials: site.socials.filter((_, j) => j !== i) }), setSiteMessage(null))}
-                  >
-                    Quitar
-                  </button>
+                <li key={i}>
+                  <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                    <select
+                      className="field !bg-bg !w-auto shrink-0 !py-2.5"
+                      value={social.kind}
+                      onChange={(e) => (patch({ kind: e.target.value as Social['kind'] }), setIconFor(null))}
+                      aria-label="Red social"
+                    >
+                      {Object.entries(SOCIAL_KINDS).map(([kind, label]) => (
+                        <option key={kind} value={kind}>
+                          {label}
+                        </option>
+                      ))}
+                      <option value="custom">Otra red…</option>
+                    </select>
+                    {custom && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setIconFor(iconFor === i ? null : i)}
+                          aria-expanded={iconFor === i}
+                          aria-label={`Elegir icono de ${social.label || 'la red'}`}
+                          title="Elegir icono"
+                          className={`bg-bg flex size-[2.875rem] shrink-0 items-center justify-center rounded-xl border ${iconFor === i ? 'border-accent' : 'border-line hover:border-dim'}`}
+                        >
+                          {social.iconUrl || social.iconPath ? (
+                            <TagIcon tag={{ iconPath: social.iconPath ?? null, iconUrl: social.iconUrl ?? null, color: null }} size={20} />
+                          ) : (
+                            <span className="text-dim text-xl leading-none">+</span>
+                          )}
+                        </button>
+                        <input className="field !bg-bg min-w-0 basis-36 sm:max-w-52" value={social.label ?? ''} onChange={(e) => patch({ label: e.target.value })} maxLength={30} placeholder="Nombre" aria-label="Nombre de la red" />
+                      </>
+                    )}
+                    <input
+                      className="field !bg-bg min-w-0 flex-1 basis-40"
+                      value={social.url}
+                      onChange={(e) => patch({ url: e.target.value })}
+                      inputMode={social.kind === 'email' ? 'email' : 'url'}
+                      placeholder={social.kind === 'email' ? 'tu@correo.com' : social.kind === 'github' ? 'https://github.com/tu_usuario' : 'https://'}
+                      aria-label={`Enlace de ${custom ? social.label || 'la red' : SOCIAL_KINDS[social.kind as keyof typeof SOCIAL_KINDS]}`}
+                    />
+                    <button
+                      type="button"
+                      className="text-dim hover:text-danger px-1 py-2 text-sm"
+                      onClick={() => (setSite({ ...site, socials: site.socials.filter((_, j) => j !== i) }), setSiteMessage(null), setIconFor(null))}
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                  {custom && iconFor === i && (
+                    <div className="bg-bg border-line mt-2 rounded-xl border p-3">
+                      <IconPicker
+                        featured={featured}
+                        total={iconTotal}
+                        selected={social.iconUrl ? null : (social.iconPath ?? null)}
+                        // Elegir un icono propone su nombre si aún no escribiste uno.
+                        onPick={(hit) => patch({ iconPath: hit.iconPath, iconKey: null, iconUrl: null, label: social.label?.trim() ? social.label : hit.name })}
+                      />
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button type="button" className="btn !py-1.5 text-sm" disabled={uploading} onClick={() => iconInput.current?.click()}>
+                          {uploading ? 'Subiendo…' : 'Subir mi imagen'}
+                        </button>
+                        {(social.iconUrl || social.iconPath) && (
+                          <button type="button" className="btn text-dim !py-1.5 text-sm" onClick={() => patch({ iconPath: null, iconKey: null, iconUrl: null })}>
+                            Quitar icono
+                          </button>
+                        )}
+                        <span className="text-dim text-xs">SVG o PNG cuadrado, hasta 1 MB. Sin icono se usa el de sitio web.</span>
+                      </div>
+                    </div>
+                  )}
                 </li>
               )
             })}
           </ul>
+        <input
+          ref={iconInput}
+          type="file"
+          accept="image/svg+xml,image/png,image/webp,image/jpeg"
+          hidden
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            const target = iconFor
+            if (!file || target === null) return
+            if (file.size > 1024 * 1024) return setSiteMessage({ kind: 'error', text: 'El icono supera 1 MB. Usa una imagen más ligera.' })
+            setUploading(true)
+            try {
+              const presign = await presignUpload({ filename: file.name, contentType: file.type, size: file.size })
+              if (!presign.ok) return setSiteMessage({ kind: 'error', text: presign.error })
+              await uploadFile(presign.data, file, () => {})
+              const icon = { iconKey: presign.data.key, iconUrl: URL.createObjectURL(file), iconPath: null }
+              setSite((current) => ({ ...current, socials: current.socials.map((x, j) => (j === target ? { ...x, ...icon } : x)) }))
+              setSiteMessage(null)
+            } catch {
+              setSiteMessage({ kind: 'error', text: 'No se pudo subir el icono. Revisa tu conexión e inténtalo de nuevo.' })
+            } finally {
+              setUploading(false)
+            }
+          }}
+        />
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             className="btn"
-            disabled={site.socials.length >= 12}
+            disabled={site.socials.length >= 24}
             onClick={() => {
               const used = new Set(site.socials.map((s) => s.kind))
-              const kind = (Object.keys(SOCIAL_KINDS) as Social['kind'][]).find((k) => !used.has(k)) ?? 'web'
+              // Con todas las conocidas ya puestas, la siguiente es una red propia.
+              const kind = (Object.keys(SOCIAL_KINDS) as Social['kind'][]).find((k) => !used.has(k)) ?? 'custom'
               setSite({ ...site, socials: [...site.socials, { kind, url: '' }] })
             }}
           >
             Añadir red
           </button>
-          <button className="btn btn-primary" disabled={pending || !siteDirty}>
+          <button
+            type="button"
+            className="btn"
+            disabled={site.socials.length >= 24}
+            onClick={() => (setSite({ ...site, socials: [...site.socials, { kind: 'custom', url: '', label: '' }] }), setIconFor(site.socials.length))}
+          >
+            Crear red propia
+          </button>
+          <button className="btn btn-primary" disabled={pending || uploading || !siteDirty}>
             Guardar redes
           </button>
+          <Status message={siteMessage} />
         </div>
         {site.socials.length === 0 && <p className="text-dim mt-4 text-sm">Aún no hay ninguna. Empieza por tu GitHub.</p>}
       </form>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { presignUpload, updateSite } from '@/app/actions'
 import { JOURNEY_KINDS, type JourneyItem, type Portfolio } from '@/lib/types'
 import { uploadFile } from '@/lib/upload'
+import GalleryEditor from './GalleryEditor'
 import { Grip, SortableItem, SortableList } from './Sortable'
 import { Tabs } from './ui'
 
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'presentacion', label: 'Presentación' },
   { id: 'sobre-mi', label: 'Sobre mí' },
   { id: 'trayectoria', label: 'Trayectoria' },
+  { id: 'galeria', label: 'Galería' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'contacto', label: 'Contacto' },
 ] as const
@@ -20,7 +22,10 @@ type Tab = (typeof TABS)[number]['id']
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 /** Lo que se guarda: sin las direcciones que calcula el servidor. */
-const strip = ({ avatarUrl: _a, cvHref: _c, ...rest }: Portfolio) => rest
+const strip = ({ avatarUrl: _a, cvHref: _c, gallery, ...rest }: Portfolio) => ({
+  ...rest,
+  gallery: gallery.map((c) => ({ ...c, items: c.items.map(({ url: _u, ...item }) => item) })),
+})
 
 function Field({ label, hint, count, max, children }: { label: string; hint?: string; count?: number; max?: number; children: React.ReactNode }) {
   return (
@@ -116,6 +121,7 @@ export default function PortfolioEditor({ initial, initialTab, previewUrl }: { i
           stats: form.stats.filter((s) => s.value.trim()),
           journey: form.journey.filter((j) => j.title.trim()),
           services: form.services.filter((s) => s.title.trim()),
+          gallery: form.gallery.filter((c) => c.name.trim()),
         },
       })
       if (!res.ok) return setMessage({ kind: 'error', text: res.error })
@@ -125,7 +131,7 @@ export default function PortfolioEditor({ initial, initialTab, previewUrl }: { i
     })
   }
 
-  const counts: Partial<Record<Tab, number>> = { trayectoria: form.journey.length, servicios: form.services.length }
+  const counts: Partial<Record<Tab, number>> = { trayectoria: form.journey.length, servicios: form.services.length, galeria: form.gallery.reduce((n, c) => n + c.items.length, 0) }
 
   return (
     <div className="mt-8">
@@ -306,6 +312,8 @@ export default function PortfolioEditor({ initial, initialTab, previewUrl }: { i
             </div>
           </div>
         )}
+
+        {tab === 'galeria' && <GalleryEditor value={form.gallery} onChange={(next) => set('gallery', next)} onError={(text) => setMessage({ kind: 'error', text })} />}
 
         {tab === 'servicios' && (
           <div>
