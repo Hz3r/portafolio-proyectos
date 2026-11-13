@@ -26,7 +26,9 @@ model Project {
   description  String        @default("")
   url          String?
   status       ProjectStatus @default(DRAFT)
-  tags         String[]
+  repoUrl      String?
+  tags         ProjectTag[]
+  sections     Json          @default("[]")
   year         Int?
   order        Int           @default(0)
   coverMediaId String?       @unique
@@ -54,6 +56,29 @@ model Media {
   createdAt DateTime  @default(now())
 
   @@index([projectId, order])
+}
+
+model Tag {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  /// Trazo SVG (viewBox 24x24) de un icono prediseñado.
+  iconPath  String?
+  /// Imagen subida al bucket, alternativa a iconPath.
+  iconKey   String?
+  color     String?
+  projects  ProjectTag[]
+  createdAt DateTime     @default(now())
+}
+
+model ProjectTag {
+  projectId String
+  tagId     String
+  order     Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@index([tagId])
 }
 
 model AdminUser {

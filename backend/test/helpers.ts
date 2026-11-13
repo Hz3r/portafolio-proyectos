@@ -24,7 +24,7 @@ export const app = createApp({
 
 export async function reset() {
   removed.length = 0
-  await db.$executeRawUnsafe('TRUNCATE "Media", "Project", "AdminUser" CASCADE')
+  await db.$executeRawUnsafe('TRUNCATE "Media", "Project", "Tag", "AdminUser" CASCADE')
   await db.adminUser.create({
     data: { email: 'admin@test.dev', passwordHash: await argon2.hash('correct-horse') },
   })

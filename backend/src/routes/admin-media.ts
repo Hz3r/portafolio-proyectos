@@ -14,6 +14,7 @@ export const UPLOAD_RULES: Record<string, { ext: string; kind: 'IMAGE' | 'VIDEO'
   'image/webp': { ext: 'webp', kind: 'IMAGE', max: 15 * MB },
   'image/avif': { ext: 'avif', kind: 'IMAGE', max: 15 * MB },
   'image/gif': { ext: 'gif', kind: 'IMAGE', max: 15 * MB },
+  'image/svg+xml': { ext: 'svg', kind: 'IMAGE', max: 1 * MB },
   'video/mp4': { ext: 'mp4', kind: 'VIDEO', max: 500 * MB },
   'video/webm': { ext: 'webm', kind: 'VIDEO', max: 500 * MB },
 }
@@ -48,7 +49,7 @@ export function adminMediaRoutes({ db, mediaUrl, storage, jwtSecret, publicApiUr
     if (!parsed.success) return c.json(invalid(parsed.error), 400)
     const { contentType, size, filename } = parsed.data
     const rule = UPLOAD_RULES[contentType]
-    if (!rule) return c.json({ error: 'Formato no permitido. Usa jpg, png, webp, avif, gif, mp4 o webm.' }, 400)
+    if (!rule) return c.json({ error: 'Formato no permitido. Usa jpg, png, webp, avif, gif, svg, mp4 o webm.' }, 400)
     if (size > rule.max) {
       return c.json({ error: `El archivo supera el límite de ${rule.max / MB} MB.` }, 400)
     }
