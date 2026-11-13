@@ -1,0 +1,40 @@
+---
+import Boot from '../components/Boot'
+import ProjectGrid from '../components/ProjectGrid'
+import Base from '../layouts/Base.astro'
+import { getProjects, site } from '../lib/server'
+
+const { projects, ok } = await getProjects()
+if (ok) Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=300')
+const count = projects.length
+---
+
+<Base>
+  <Boot client:load />
+  <header class="flex items-end justify-between gap-6 pt-10 pb-8 sm:pt-16 sm:pb-12">
+    <div>
+      <h1 class="text-[2rem] leading-none font-semibold tracking-tight sm:text-5xl">
+        {site.link ? <a href={site.link} rel="noopener">{site.handle}</a> : site.handle}<span class="cursor-blink" aria-hidden="true"></span>
+      </h1>
+      {site.tagline && <p class="text-dim mt-3 max-w-md text-[1.0625rem] leading-snug sm:mt-4 sm:text-lg">{site.tagline}</p>}
+    </div>
+    {count > 0 && (
+      <p class="pixel text-dim shrink-0 pb-1 text-right">
+        <span class="text-accent">{count}</span> {count === 1 ? 'proyecto' : 'proyectos'}
+      </p>
+    )}
+  </header>
+
+  {count > 0 ? (
+    <ProjectGrid client:load projects={projects} />
+  ) : (
+    <div class="border-line rounded-2xl border border-dashed px-6 py-20 text-center">
+      <p class="pixel text-accent">{ok ? 'Sin partidas guardadas' : 'Sin señal'}</p>
+      <p class="text-dim mx-auto mt-4 max-w-sm">
+        {ok
+          ? 'Todavía no hay proyectos publicados. Vuelve pronto.'
+          : 'No se pudieron cargar los proyectos. Recarga la página en unos segundos.'}
+      </p>
+    </div>
+  )}
+</Base>
