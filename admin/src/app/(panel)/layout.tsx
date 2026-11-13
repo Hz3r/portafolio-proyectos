@@ -6,7 +6,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   return (
     <div className="mx-auto w-full max-w-5xl px-5 pb-24 sm:px-8">
       <header className="border-line flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b py-4">
-        <div className="flex items-center gap-6">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
           <span className="pixel text-accent">Panel</span>
           <NavLinks />
         </div>

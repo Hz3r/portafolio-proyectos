@@ -50,9 +50,36 @@ const SPRITES = {
     rows: ['....cccc....', '...cccccc...', '.xxxxxxxxxx.', 'xmxxmxxmxxmx', '.xxxxxxxxxx.', '...x....x...'],
     palette: { c: '#8fe9ff', x: '#aab2c5', m: '#ff6ad5' },
   },
+  // Nudo turquesa que flota.
+  nudo: {
+    rows: ['....tttt....', '..tttttttt..', '.tt.tttt.tt.', '.tttttttttt.', 'tttkttttkttt', 'tttkttttkttt', '.tttttttttt.', '.tt.tttt.tt.', '..tttttttt..', '....tttt....'],
+    palette: { t: '#19c9a3', k: '#052a22' },
+  },
+  // Ballena azul pequeña.
+  ballena: {
+    rows: ['.........b.b', '..........b.', '..bbbbbb..b.', '.bbbbbbbbbb.', 'bbkbbbbbbbb.', 'bbbbbbbbbb..', '.llllllll...'],
+    palette: { b: '#4d8dff', l: '#cfe0ff', k: '#081a3a' },
+  },
+  // Robot de gafas bicolor.
+  visor: {
+    rows: ['...xxxxxx...', '..xxxxxxxx..', '.xppppccccx.', '.xppppccccx.', '..xxxxxxxx..', '...xxxxxx...', '..xxxxxxxx..', '..xxxxxxxx..'],
+    legs: [['...xx..xx...', '...xx..xx...'], ['..xx....xx..', '..xx....xx..']],
+    palette: { x: '#f1f1f6', p: '#ff6ad5', c: '#5ad1ff' },
+    leg: 'x',
+  },
+  // Gato atigrado.
+  gato: {
+    rows: ['.c........c.', '.cc......cc.', '.cccccccccc.', '.cdccddccdc.', '.cckcccckcc.', '.cccccccccc.', '..cccccccc..', '..cdccccdc..'],
+    legs: [['..cc....cc..', '..cc....cc..'], ['...cc..cc...', '...cc..cc...']],
+    palette: { c: '#ffb347', d: '#d9822b', k: '#2a1605' },
+    leg: 'c',
+  },
 } satisfies Record<string, Def>
 
 export type SpriteKind = keyof typeof SPRITES
+export const SPRITE_KINDS = Object.keys(SPRITES) as SpriteKind[]
+/** Los que flotan en vez de caminar. */
+export const floats = (kind: SpriteKind) => !('legs' in SPRITES[kind])
 
 const path = (rows: string[], letter: string, offsetY = 0) =>
   rows

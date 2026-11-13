@@ -87,10 +87,17 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
           </div>
         </div>
 
-        <fieldset className="border-line mt-7 border-t pt-6">
-          <legend className="sr-only">Redes sociales</legend>
-          <p className="text-sm font-medium">Redes sociales</p>
-          <p className="text-dim mt-1 text-sm">
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <button className="btn btn-primary" disabled={pending || !siteDirty}>
+            Guardar perfil
+          </button>
+          <Status message={siteMessage} />
+        </div>
+      </form>
+
+      <form onSubmit={saveSite} className="bg-surface border-line rounded-2xl border p-5 sm:p-6 lg:col-span-2">
+        <h2 className="text-lg font-semibold">Redes sociales</h2>
+        <p className="text-dim mt-1 text-sm">
             Aparecen como iconos junto a tu usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.
           </p>
           <ul className="mt-4 space-y-2">
@@ -132,9 +139,10 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
               )
             })}
           </ul>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="btn mt-3 !py-1.5 text-sm"
+            className="btn"
             disabled={site.socials.length >= 12}
             onClick={() => {
               const used = new Set(site.socials.map((s) => s.kind))
@@ -144,14 +152,11 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
           >
             Añadir red
           </button>
-        </fieldset>
-
-        <div className="mt-6 flex flex-wrap items-center gap-4">
           <button className="btn btn-primary" disabled={pending || !siteDirty}>
-            Guardar perfil
+            Guardar redes
           </button>
-          <Status message={siteMessage} />
         </div>
+        {site.socials.length === 0 && <p className="text-dim mt-4 text-sm">Aún no hay ninguna. Empieza por tu GitHub.</p>}
       </form>
 
       <form onSubmit={saveAccount} className="bg-surface border-line rounded-2xl border p-5 sm:p-6">
