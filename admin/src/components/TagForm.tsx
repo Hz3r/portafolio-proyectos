@@ -93,7 +93,9 @@ export default function TagForm({
           {hasIcon ? (
             <TagIcon tag={{ iconPath: draft.iconPath, iconUrl: preview, color: draft.color }} size={22} />
           ) : (
-            <span className="text-dim text-[0.6875rem]">Sin icono</span>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="text-dim" role="img" aria-label="Sin icono">
+              <rect x="1.5" y="1.5" width="15" height="15" rx="4" />
+            </svg>
           )}
         </span>
         <div className="min-w-0 flex-1">
@@ -158,7 +160,7 @@ export default function TagForm({
           />
           <span>
             <span className="block text-sm font-medium">Es una de mis habilidades</span>
-            <span className="text-dim block text-xs">Aparece en la sección de habilidades de la portada.</span>
+            <span className="text-dim block text-xs">Aparece en la sección de habilidades del portafolio.</span>
           </span>
         </label>
         {draft.skill && (

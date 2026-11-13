@@ -1,17 +1,44 @@
 # Portafolio de proyectos
 
-Un sitio que muestra directamente tus proyectos, con un panel para administrarlos.
+Un portafolio de programador con dos páginas (el portafolio completo y solo los proyectos) y un panel para administrarlo todo.
 
 | Carpeta     | Qué es                                   | Tecnología                         |
 | ----------- | ---------------------------------------- | ---------------------------------- |
 | `frontend/` | El sitio público                         | Astro, React, Tailwind             |
 | `backend/`  | La API; única parte que toca los datos   | Node, Hono, Prisma, PostgreSQL     |
-| `admin/`    | El panel para crear y editar proyectos   | Next.js                            |
+| `admin/`    | El panel para llenar el portafolio y los proyectos | Next.js                  |
 
 Cada carpeta es independiente, con su propio `package.json`. Las imágenes y videos
 se guardan en un bucket compatible con S3.
 
 ## Cómo funciona
+
+### Dos páginas, dos enlaces
+
+| Ruta          | Qué muestra                                                                    |
+| ------------- | ------------------------------------------------------------------------------ |
+| `/proyectos`  | Solo los proyectos, con filtros. Para redes donde quieres ir directo al trabajo |
+| `/portafolio` | El portafolio completo en una sola página                                       |
+| `/`           | La que elijas en **Ajustes → Página de inicio** (por defecto, proyectos)         |
+
+Cada página enlaza a la otra. `/proyectos?tag=Tailwind CSS` abre los proyectos ya
+filtrados por esa etiqueta; el filtro elegido queda en la dirección para compartirla.
+
+### Portafolio
+
+Se llena en la sección **Portafolio** del panel. Lo que quede vacío no se muestra.
+
+| Sección       | De dónde sale                                                              |
+| ------------- | -------------------------------------------------------------------------- |
+| Presentación  | Nombre, a qué te dedicas, frase principal, ubicación, disponibilidad, foto y CV (PDF o enlace) |
+| Sobre mí      | Tu historia (Markdown) y hasta 6 cifras                                     |
+| Habilidades   | Sección **Habilidades**: pirámide por nivel, o agrupadas por área           |
+| Proyectos     | Los 4 primeros proyectos publicados, en el orden del panel                  |
+| Trayectoria   | Trabajos, estudios, certificaciones y logros, como un camino que se traza al bajar |
+| Servicios     | Lo que alguien puede encargarte                                             |
+| Contacto      | Título, mensaje, correo y tus redes                                         |
+
+El **Resumen** del panel muestra qué le falta al portafolio y los enlaces de cada página.
 
 - Un proyecto tiene título, resumen, introducción, enlace opcional, enlace al
   repositorio opcional, año, etiquetas, imágenes y videos (archivos subidos o
@@ -54,11 +81,13 @@ con buscador.
 ### Habilidades, redes y créditos
 
 - **Habilidades**: se administran en la sección **Habilidades** del panel, por
-  grupos (Frontend, Backend…). Cada habilidad es una etiqueta; puedes elegir una
-  existente o crear una nueva ahí mismo. La portada las muestra agrupadas; las que
-  tienen proyectos publicados sirven de filtro.
+  grupos (Frontend, Backend…) y con un nivel (aprendiendo, con soltura, la domino).
+  Cada habilidad es una etiqueta; puedes elegir una existente o crear una nueva ahí
+  mismo. Se muestran en el portafolio; las que tienen proyectos publicados llevan a
+  la página de proyectos ya filtrada. La página de proyectos no las repite: ahí el
+  filtro es la barra de etiquetas, con el número de proyectos de cada una.
 - **Redes sociales**: se configuran en Ajustes y aparecen como iconos junto a tu
-  usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.
+  usuario y en el contacto del portafolio. Tu GitHub además se enlaza en los créditos de cada proyecto.
 - **Créditos**: en cada proyecto indicas si es tuyo o si colaboraste, tu papel, y
   las demás personas con su enlace. Si el enlace es un perfil de GitHub se muestra
   su foto.
@@ -66,7 +95,7 @@ con buscador.
 ### Ajustes
 
 En **Ajustes** del panel se edita el perfil del sitio (usuario, descripción y
-enlace) y el acceso al panel (correo y contraseña). `ADMIN_EMAIL` y
+enlace), la página de inicio y el acceso al panel (correo y contraseña). `ADMIN_EMAIL` y
 `ADMIN_PASSWORD` solo se usan para crear el administrador la primera vez;
 `SITE_HANDLE`, `SITE_TAGLINE` y `SITE_LINK` solo se usan mientras el perfil esté
 vacío.
@@ -165,7 +194,7 @@ cambian desde **Ajustes** en el panel.
 | Variable   | Valor                                        |
 | ---------- | -------------------------------------------- |
 | `API_URL`  | `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}` |
-| `SITE_URL` | URL del sitio público (botón "Ver en el sitio") |
+| `SITE_URL` | URL del sitio público (enlaces "Ver en el sitio" y enlaces para compartir) |
 
 ### Sobre los archivos
 

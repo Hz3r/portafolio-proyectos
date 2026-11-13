@@ -12,9 +12,18 @@ const Status = ({ message }: { message: Message }) =>
     </p>
   )
 
-export default function SettingsForms({ site: initialSite, email: initialEmail }: { site: Site; email: string }) {
-  const [site, setSite] = useState(initialSite)
-  const [savedSite, setSavedSite] = useState(initialSite)
+/** Lo que se edita aquí; el contenido del portafolio tiene su propia sección. */
+type Profile = Pick<Site, 'handle' | 'tagline' | 'link' | 'socials' | 'home'>
+const profileOf = ({ handle, tagline, link, socials, home }: Site): Profile => ({ handle, tagline, link, socials, home })
+
+const HOMES: { id: Site['home']; label: string; path: string; hint: string }[] = [
+  { id: 'PROJECTS', label: 'Proyectos', path: '/proyectos', hint: 'Solo la lista de proyectos, con sus filtros.' },
+  { id: 'PORTFOLIO', label: 'Portafolio', path: '/portafolio', hint: 'La página completa: quién eres, habilidades, trayectoria y contacto.' },
+]
+
+export default function SettingsForms({ site: initial, email: initialEmail, siteUrl }: { site: Site; email: string; siteUrl: string | null }) {
+  const [site, setSite] = useState(() => profileOf(initial))
+  const [savedSite, setSavedSite] = useState(site)
   const [siteMessage, setSiteMessage] = useState<Message>(null)
 
   const [email, setEmail] = useState(initialEmail)
@@ -33,8 +42,8 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
     startTransition(async () => {
       const res = await updateSite({ ...site, socials: site.socials.filter((s) => s.url.trim()) })
       if (!res.ok) return setSiteMessage({ kind: 'error', text: res.error })
-      setSite(res.data)
-      setSavedSite(res.data)
+      setSite(profileOf(res.data))
+      setSavedSite(profileOf(res.data))
       setSiteMessage({ kind: 'ok', text: 'Perfil guardado. El sitio lo muestra en menos de un minuto.' })
     })
   }
@@ -62,7 +71,7 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
     <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
       <form onSubmit={saveSite} className="bg-surface border-line rounded-2xl border p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Perfil del sitio</h2>
-        <p className="text-dim mt-1 text-sm">Lo que ve quien entra, arriba de tus proyectos.</p>
+        <p className="text-dim mt-1 text-sm">El encabezado de la página de proyectos. El portafolio usa además lo que llenes en su sección.</p>
 
         <div className="mt-6 space-y-5">
           <div>
@@ -95,10 +104,41 @@ export default function SettingsForms({ site: initialSite, email: initialEmail }
         </div>
       </form>
 
+      <form onSubmit={saveSite} className="bg-surface border-line rounded-2xl border p-5 sm:p-6">
+        <h2 className="text-lg font-semibold">Página de inicio</h2>
+        <p className="text-dim mt-1 text-sm">
+          Qué se abre al entrar a la dirección principal del sitio. Las dos páginas tienen además su enlace fijo, para compartir la que
+          convenga en cada red.
+        </p>
+        <fieldset className="mt-5 space-y-2">
+          <legend className="sr-only">Página de inicio</legend>
+          {HOMES.map((h) => {
+            const on = site.home === h.id
+            return (
+              <label key={h.id} className={`bg-bg flex items-start gap-3 rounded-xl border p-4 transition-colors ${on ? 'border-accent' : 'border-line hover:border-dim'}`}>
+                <input type="radio" name="home" className="accent-accent mt-1 size-4 shrink-0" checked={on} onChange={() => (setSite({ ...site, home: h.id }), setSiteMessage(null))} />
+                <span className="min-w-0">
+                  <span className="block font-medium">{h.label}</span>
+                  <span className="text-dim block text-sm">{h.hint}</span>
+                  <span className="text-dim mt-1 block truncate text-xs">
+                    Enlace fijo: {siteUrl ? `${siteUrl}${h.path}` : h.path}
+                  </span>
+                </span>
+              </label>
+            )
+          })}
+        </fieldset>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <button className="btn btn-primary" disabled={pending || !siteDirty}>
+            Guardar inicio
+          </button>
+        </div>
+      </form>
+
       <form onSubmit={saveSite} className="bg-surface border-line rounded-2xl border p-5 sm:p-6 lg:col-span-2">
         <h2 className="text-lg font-semibold">Redes sociales</h2>
         <p className="text-dim mt-1 text-sm">
-            Aparecen como iconos junto a tu usuario. Tu GitHub además se enlaza en los créditos de cada proyecto.
+            Aparecen como iconos junto a tu usuario y en el contacto del portafolio. Tu GitHub además se enlaza en los créditos de cada proyecto.
           </p>
           <ul className="mt-4 space-y-2">
             {site.socials.map((social, i) => {

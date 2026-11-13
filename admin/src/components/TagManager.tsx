@@ -75,7 +75,7 @@ export default function TagManager({ initial, featured, total }: { initial: Tag[
             Aún no tienes etiquetas. Busca un icono, ponle nombre y créala.
           </p>
         ) : (
-          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          <ul className="mt-4 grid gap-2 xl:grid-cols-2">
             {visible.map((t) => (
               <li key={t.id} className={`bg-surface flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${editing?.id === t.id ? 'border-accent' : 'border-line'}`}>
                 <span className="bg-raised flex size-9 shrink-0 items-center justify-center rounded-lg">
@@ -83,7 +83,7 @@ export default function TagManager({ initial, featured, total }: { initial: Tag[
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{t.name}</span>
-                  <span className="text-dim text-xs">
+                  <span className="text-dim block truncate text-xs">
                     {t.skill && <span className="text-accent">Habilidad{t.skillGroup ? ` de ${t.skillGroup}` : ''}. </span>}
                     {t.projectCount ? `${t.projectCount} ${t.projectCount === 1 ? 'proyecto' : 'proyectos'}` : 'Sin usar'}
                   </span>

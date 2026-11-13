@@ -9,7 +9,7 @@ export default async function TagsPage() {
     <main className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight">Etiquetas</h1>
       <p className="text-dim mt-2 max-w-xl">
-        Tecnologías y tipos de proyecto. Aparecen con su icono en el sitio y sirven de filtro en la portada.
+        Tecnologías y tipos de proyecto. Aparecen con su icono en el sitio y sirven de filtro en la página de proyectos.
       </p>
       {res.ok ? (
         <TagManager initial={res.data} featured={findIcons('')} total={ICON_COUNT} />

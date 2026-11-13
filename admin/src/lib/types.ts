@@ -18,6 +18,8 @@ export type Tag = {
   color: string | null
   skill?: boolean
   skillGroup?: string
+  /** 3 la domino, 2 la uso con soltura, 1 la estoy aprendiendo. */
+  skillLevel?: number
   projectCount?: number
 }
 
@@ -36,6 +38,34 @@ export const SOCIAL_KINDS = {
   web: 'Sitio web',
 } as const
 export type Social = { kind: keyof typeof SOCIAL_KINDS; url: string }
+
+export const JOURNEY_KINDS = { WORK: 'Trabajo', EDUCATION: 'Formación', CERT: 'Certificación', MILESTONE: 'Logro' } as const
+export type JourneyItem = { id: string; kind: keyof typeof JOURNEY_KINDS; title: string; place: string; period: string; text: string; url: string }
+export type Stat = { id: string; value: string; label: string }
+export type Service = { id: string; title: string; text: string }
+
+/** Contenido de la página de portafolio. */
+export type Portfolio = {
+  name: string
+  role: string
+  headline: string
+  intro: string
+  location: string
+  available: boolean
+  availableNote: string
+  avatarKey: string | null
+  avatarUrl: string | null
+  cvKey: string | null
+  cvUrl: string
+  cvHref: string | null
+  about: string
+  stats: Stat[]
+  journey: JourneyItem[]
+  services: Service[]
+  contactTitle: string
+  contactText: string
+  contactEmail: string
+}
 
 export type Metric = { label: string; value: string; note: string; highlight: boolean }
 export type Step = { title: string; text: string }
@@ -70,7 +100,7 @@ export type Project = {
   media: Media[]
 }
 
-export type Presign = { key: string; kind: 'IMAGE' | 'VIDEO'; uploadUrl: string; fallbackUrl: string }
+export type Presign = { key: string; kind: 'IMAGE' | 'VIDEO' | 'FILE'; uploadUrl: string; fallbackUrl: string }
 
 /** Resultado de una acción: datos o un mensaje de error para mostrar. */
 export type Result<T = undefined> = { ok: true; data: T } | { ok: false; error: string }
