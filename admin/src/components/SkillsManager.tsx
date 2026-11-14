@@ -7,9 +7,9 @@ import type { Tag } from '@/lib/types'
 import { TagIcon } from './ui'
 
 const LEVELS = [
-  { value: 1, label: 'Aprendiendo', hint: 'La estoy aprendiendo: base de la pirámide' },
-  { value: 2, label: 'Soltura', hint: 'La uso con soltura: centro de la pirámide' },
-  { value: 3, label: 'Domino', hint: 'La domino: punta de la pirámide' },
+  { value: 1, label: 'Aprendiendo', hint: 'La estoy aprendiendo: órbita exterior' },
+  { value: 2, label: 'Soltura', hint: 'La uso con soltura: órbita media' },
+  { value: 3, label: 'Domino', hint: 'La domino: órbita interior' },
 ]
 const SUGGESTED = ['Frontend', 'Backend', 'Bases de datos', 'Herramientas', 'Diseño', 'IA']
 const sorted = (list: Tag[]) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))

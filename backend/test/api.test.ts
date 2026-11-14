@@ -2,7 +2,8 @@ import { sign } from 'hono/jwt'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { toEmbedUrl } from '../src/embed.ts'
 import { slugify } from '../src/slug.ts'
-import { app, json, login, removed, reset } from './helpers.ts'
+import { parseContributions } from '../src/github.ts'
+import { app, asked, json, login, removed, reset } from './helpers.ts'
 
 const MB = 1024 * 1024
 let token: string
@@ -395,5 +396,55 @@ describe('ajustes', () => {
     const attempt = (email: string, password: string) => app.request('/auth/login', json('POST', { email, password }))
     expect((await attempt('admin@test.dev', 'correct-horse')).status).toBe(401)
     expect((await attempt('nuevo@test.dev', 'nueva-clave-1')).status).toBe(200)
+  })
+})
+
+describe('github y asistente', () => {
+  it('lee el calendario de contribuciones de la página de GitHub', () => {
+    const cell = (id: string, date: string, level: number) =>
+      `<td tabindex="0" data-ix="0" style="width: 10px" data-date="${date}" id="contribution-day-component-${id}" data-level="${level}" role="gridcell" class="ContributionCalendar-day"></td>`
+    const tip = (id: string, text: string) => `<tool-tip id="tooltip-${id}" for="contribution-day-component-${id}" popover="manual" class="sr-only">${text}</tool-tip>`
+    const html = `<h2 class="f4 text-normal mb-2">\n      1,424\n       contributions\n        in the last year\n    </h2>
+      <table><tr>${cell('0-1', '2026-11-08', 0)}${cell('0-0', '2026-11-01', 2)}${cell('1-0', '2026-11-02', 4)}</tr></table>
+      ${tip('0-0', '3 contributions on November 1st.')}${tip('0-1', 'No contributions on November 8th.')}${tip('1-0', '12 contributions on November 2nd.')}`
+    expect(parseContributions(html)).toEqual({
+      total: 1424,
+      days: [
+        { date: '2026-11-01', count: 3, level: 2 },
+        { date: '2026-11-02', count: 12, level: 4 },
+        { date: '2026-11-08', count: 0, level: 0 },
+      ],
+    })
+    expect(parseContributions('<html>otra cosa</html>')).toBeNull()
+  })
+
+  it('sirve las contribuciones del GitHub de las redes', async () => {
+    expect((await app.request('/github')).status).toBe(404)
+    await admin('PATCH', '/site', { socials: [{ kind: 'github', url: 'https://github.com/hz3r' }] })
+    expect(await (await app.request('/github')).json()).toMatchObject({ user: 'hz3r', total: 3, days: [{ date: '2026-11-01', count: 3, level: 2 }] })
+    // Un enlace que no es un perfil no se consulta.
+    await admin('PATCH', '/site', { socials: [{ kind: 'github', url: 'https://github.com/hz3r/repo' }] })
+    expect((await app.request('/github')).status).toBe(404)
+  })
+
+  it('responde preguntas con los datos publicados y limita el abuso', async () => {
+    await admin('PATCH', '/site', { handle: '@hz3r', portfolio: { name: 'Hz3r', journey: [{ id: 'a', title: 'Desarrollador', place: 'Acme' }] } })
+    await create({ title: 'Publicado', status: 'PUBLISHED' })
+    await create({ title: 'Secreto en borrador' })
+    const ask = (question: unknown, ip = '1.1.1.1') =>
+      app.request('/ask', { ...json('POST', { question }), headers: { 'content-type': 'application/json', 'x-forwarded-for': ip } })
+
+    expect((await (await app.request('/site')).json()).ai).toBe(true)
+    expect((await ask('')).status).toBe(400)
+    expect((await ask('x'.repeat(301))).status).toBe(400)
+    expect(await (await ask('¿Dónde trabajó?')).json()).toEqual({ answer: 'Respuesta de prueba' })
+    expect(asked[0].context).toContain('Desarrollador en Acme')
+    expect(asked[0].context).toContain('Publicado')
+    expect(asked[0].context).not.toContain('Secreto')
+    expect((await ask('silencio, por favor')).status).toBe(502)
+
+    for (let i = 0; i < 12; i++) await ask('¿Qué hace?', '2.2.2.2')
+    expect((await ask('¿Qué hace?', '2.2.2.2')).status).toBe(429)
+    expect((await ask('¿Qué hace?', '3.3.3.3')).status).toBe(200)
   })
 })

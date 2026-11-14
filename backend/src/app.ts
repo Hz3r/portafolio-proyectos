@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import type { Asker } from './ask.ts'
 import { requireAdmin, verifyUpload } from './auth.ts'
 import type { Db } from './db.ts'
 import { adminMediaRoutes } from './routes/admin-media.ts'
@@ -8,6 +9,7 @@ import { adminSettingsRoutes } from './routes/admin-settings.ts'
 import { adminTagRoutes } from './routes/admin-tags.ts'
 import { authRoutes } from './routes/auth.ts'
 import { publicRoutes } from './routes/public.ts'
+import type { GithubSource } from './github.ts'
 import type { Storage } from './storage.ts'
 
 export type AppConfig = {
@@ -18,6 +20,10 @@ export type AppConfig = {
   corsOrigins: string[]
   /** Base pública del bucket, si existe. Si no, los archivos salen por /media/*. */
   s3PublicUrl?: string
+  /** Asistente de la terminal del portafolio. Sin él, la terminal solo responde con sus comandos. */
+  ask?: Asker
+  /** De dónde salen las contribuciones de GitHub. Sin él, el sitio no muestra el calendario. */
+  github?: GithubSource
 }
 
 export type Deps = AppConfig & { mediaUrl: (key: string) => string }

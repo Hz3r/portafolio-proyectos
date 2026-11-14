@@ -12,6 +12,7 @@
     "release": "prisma migrate deploy && tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@aws-sdk/client-s3": "^3.1168.0",
     "@aws-sdk/s3-request-presigner": "^3.1168.0",
     "@hono/node-server": "^2.1.8",

@@ -160,7 +160,8 @@ export default function SettingsForms({
         <h2 className="text-lg font-semibold">Redes sociales</h2>
         <p className="text-dim mt-1 text-sm">
             Aparecen como iconos junto a tu usuario y en el contacto del portafolio, y se abren en una pestaña nueva. Si una red no está en la
-            lista, créala con su nombre e icono. Tu GitHub además se enlaza en los créditos de cada proyecto.
+            lista, créala con su nombre e icono. Tu GitHub además se enlaza en los créditos de cada proyecto y muestra tu calendario de
+            contribuciones en el portafolio.
           </p>
           <ul className="mt-4 space-y-2">
             {site.socials.map((social, i) => {

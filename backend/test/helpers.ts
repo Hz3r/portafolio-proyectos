@@ -6,6 +6,7 @@ import { TEST_DATABASE_URL } from './global-setup.ts'
 
 export const db = createDb(TEST_DATABASE_URL)
 export const removed: string[] = []
+export const asked: { context: string; question: string }[] = []
 
 const storage: Storage = {
   presignUpload: async (key) => `https://bucket.test/upload/${key}`,
@@ -20,10 +21,16 @@ export const app = createApp({
   jwtSecret: 'test-secret-test-secret-test-secret-1234',
   publicApiUrl: 'http://api.test',
   corsOrigins: ['http://admin.test'],
+  ask: async (context, question) => {
+    asked.push({ context, question })
+    return question.includes('silencio') ? null : 'Respuesta de prueba'
+  },
+  github: async (user) => (user === 'hz3r' ? { total: 3, days: [{ date: '2026-11-01', count: 3, level: 2 }] } : null),
 })
 
 export async function reset() {
   removed.length = 0
+  asked.length = 0
   await db.$executeRawUnsafe('TRUNCATE "Media", "Project", "Tag", "AdminUser", "SiteSettings" CASCADE')
   await db.adminUser.create({
     data: { email: 'admin@test.dev', passwordHash: await argon2.hash('correct-horse') },
