@@ -30,16 +30,29 @@ Se llena en la sección **Portafolio** del panel. Lo que quede vacío no se mues
 
 | Sección       | De dónde sale                                                              |
 | ------------- | -------------------------------------------------------------------------- |
-| Presentación  | Nombre, a qué te dedicas, frase principal, ubicación, disponibilidad, foto y CV (PDF o enlace) |
+| Presentación  | Nombre, a qué te dedicas, frase principal, ubicación, disponibilidad, foto y CV (PDF o enlace). A su lado va la terminal |
 | Sobre mí      | Tu historia (Markdown) y hasta 6 cifras                                     |
-| Habilidades   | Sección **Habilidades**: pirámide por nivel, o agrupadas por área           |
+| Habilidades   | Sección **Habilidades**: órbitas por nivel (cuanto más cerca del centro, más la dominas), o agrupadas por área |
 | Proyectos     | Los 4 primeros proyectos publicados, en el orden del panel                  |
+| Actividad     | Tu calendario de contribuciones de GitHub del último año, con rachas. Aparece si tienes GitHub en tus redes |
 | Trayectoria   | Trabajos, estudios, certificaciones y logros, como un camino que se traza al bajar |
 | Galería       | Imágenes por categorías que tú creas (certificados, cursos, eventos, instalaciones…); cada categoría es una pestaña |
 | Servicios     | Lo que alguien puede encargarte                                             |
 | Contacto      | Título, mensaje, correo y tus redes                                         |
 
 El **Resumen** del panel muestra qué le falta al portafolio y los enlaces de cada página.
+
+### Terminal
+
+La cabecera del portafolio tiene una terminal que se puede usar: escribe `ayuda` para ver
+los comandos (`proyectos`, `habilidades`, `trayectoria`, `contacto`, `abrir 1`, `ir contacto`…).
+Se arrastra desde su barra, se maximiza y cambia de estilo entre macOS, Linux y Windows
+(el estilo elegido se aplica a todas las ventanas de la página).
+
+Si el backend tiene `ANTHROPIC_API_KEY`, lo que no sea un comando se trata como una pregunta
+y la responde Claude usando solo los datos publicados del portafolio. Hay un tope de 12
+preguntas cada 10 minutos por visitante y 400 al día en total. Sin la clave, la terminal
+intenta responder con sus propios comandos.
 
 - Un proyecto tiene título, resumen, introducción, enlace opcional, enlace al
   repositorio opcional, año, etiquetas, imágenes y videos (archivos subidos o
@@ -174,6 +187,9 @@ Servicio desde este repositorio con **Root Directory** = `backend`. Genera un do
 | `S3_ACCESS_KEY_ID`     | Access key del bucket                                    |
 | `S3_SECRET_ACCESS_KEY` | Secret key del bucket                                    |
 | `S3_REGION`            | Región del bucket (o `auto`)                             |
+| `ANTHROPIC_API_KEY`    | Opcional: activa el asistente de la terminal             |
+| `ASK_MODEL`            | Opcional: modelo del asistente (por defecto `claude-opus-5-5`) |
+| `GITHUB_TOKEN`         | Opcional: lee las contribuciones por la API de GitHub en vez de la página pública |
 
 En cada despliegue se aplican las migraciones. El administrador se crea la primera
 vez con `ADMIN_EMAIL` y `ADMIN_PASSWORD`; después el correo y la contraseña se

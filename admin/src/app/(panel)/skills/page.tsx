@@ -8,7 +8,7 @@ export default async function SkillsPage() {
     <main className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight">Habilidades</h1>
       <p className="text-dim mt-2 max-w-2xl">
-        Lo que sabes hacer, por área y por nivel. El portafolio las muestra como una pirámide: arriba las que dominas. Las que usas
+        Lo que sabes hacer, por área y por nivel. El portafolio las muestra en órbitas: cuanto más cerca del centro, más la dominas. Las que usas
         en proyectos publicados llevan a esos proyectos.
       </p>
       {res.ok ? (

@@ -10,6 +10,7 @@
 
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-pixel: 'Silkscreen', ui-monospace, monospace;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -394,6 +395,18 @@
     rotate: calc(var(--o) * -1turn);
     animation: orbit var(--d) linear infinite reverse;
     animation-delay: calc(var(--d) * var(--o) * -1);
+  }
+
+  .orbit-item.rev {
+    animation-direction: reverse;
+  }
+  .orbit-item.rev > span {
+    animation-direction: normal;
+  }
+  /* Al pasar por el sistema de habilidades los planetas se detienen para poder elegirlos. */
+  .skill-system.paused .orbit-item,
+  .skill-system.paused .orbit-item > span {
+    animation-play-state: paused;
   }
 
   .pulse-dot {

@@ -1,4 +1,4 @@
-import type { Owner, Portfolio, Project, SkillGroup, Social } from './api'
+import type { Contributions, Owner, Portfolio, Project, SkillGroup, Social } from './api'
 
 const API_URL = (process.env.API_URL ?? import.meta.env.API_URL ?? 'http://localhost:4000').replace(/\/$/, '')
 
@@ -33,6 +33,8 @@ export type Site = {
   skills: SkillGroup[]
   home: 'PROJECTS' | 'PORTFOLIO'
   portfolio: Portfolio
+  /** El backend tiene activado el asistente de la terminal. */
+  ai: boolean
 }
 
 const EMPTY: Portfolio = {
@@ -70,9 +72,30 @@ export async function getSite(): Promise<Site> {
     skills: data?.skills ?? [],
     home: data?.home === 'PORTFOLIO' ? 'PORTFOLIO' : 'PROJECTS',
     portfolio: { ...EMPTY, ...data?.portfolio },
+    ai: data?.ai === true,
   }
   if (data) cached = { at: Date.now(), site }
   return site
+}
+
+/** Contribuciones de GitHub; `null` si no hay GitHub en las redes o no se pudo consultar. */
+export async function getGithub(): Promise<Contributions | null> {
+  return (await get<Contributions>('/github')).data
+}
+
+/** Envía una pregunta de la terminal al asistente del backend. */
+export async function askBackend(question: string, ip: string): Promise<{ status: number; body: unknown }> {
+  try {
+    const res = await fetch(`${API_URL}/ask`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
+      body: JSON.stringify({ question }),
+      signal: AbortSignal.timeout(40000),
+    })
+    return { status: res.status, body: await res.json().catch(() => null) }
+  } catch {
+    return { status: 502, body: { error: 'El asistente no responde ahora. Prueba en un momento.' } }
+  }
 }
 
 export const ownerOf = (site: Site): Owner => ({

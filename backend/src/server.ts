@@ -1,5 +1,7 @@
 import { serve } from '@hono/node-server'
 import { createApp } from './app.ts'
+import { createAsker } from './ask.ts'
+import { createGithubSource } from './github.ts'
 import { createDb } from './db.ts'
 import { loadEnv } from './env.ts'
 import { createS3Storage } from './storage.ts'
@@ -12,6 +14,8 @@ const app = createApp({
   publicApiUrl: env.PUBLIC_API_URL,
   corsOrigins: env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean),
   s3PublicUrl: env.S3_PUBLIC_URL,
+  ask: createAsker(env.ANTHROPIC_API_KEY, env.ASK_MODEL),
+  github: createGithubSource(env.GITHUB_TOKEN),
 })
 
 serve({ fetch: app.fetch, port: env.PORT, hostname: '0.0.0.0' }, (info) => {

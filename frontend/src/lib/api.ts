@@ -59,6 +59,10 @@ export type Portfolio = {
   contactEmail: string
 }
 
+export type ContributionDay = { date: string; count: number; level: number }
+/** Calendario de contribuciones de GitHub del último año. */
+export type Contributions = { user: string; url: string; total: number; days: ContributionDay[] }
+
 /** Rutas fijas de las dos páginas; la raíz muestra la que se elija en el panel. */
 export const ROUTES = { projects: '/proyectos', portfolio: '/portafolio' } as const
 

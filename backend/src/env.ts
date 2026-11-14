@@ -14,6 +14,9 @@ const schema = z.object({
   S3_REGION: z.string().default('auto'),
   S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
   S3_PUBLIC_URL: z.string().url().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ASK_MODEL: z.string().optional(),
+  GITHUB_TOKEN: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>

@@ -5,15 +5,17 @@ import TagBadge from '../TagBadge'
 import Journey from '../portfolio/Journey'
 import Nav from '../portfolio/Nav'
 import PhotoGallery from '../portfolio/PhotoGallery'
-import Orbit from '../portfolio/Orbit.astro'
-import SkillPyramid from '../portfolio/SkillPyramid'
+import Activity from '../portfolio/Activity'
+import SkillSystem from '../portfolio/SkillSystem'
+import Terminal, { type TerminalData } from '../portfolio/Terminal'
 import Base from '../../layouts/Base.astro'
 import { ROUTES } from '../../lib/api'
+import { SOCIAL_ICONS } from '../../lib/social-icons'
 import { renderMarkdown } from '../../lib/markdown'
-import { getProjects, getSite } from '../../lib/server'
+import { getGithub, getProjects, getSite } from '../../lib/server'
 
 // El portafolio completo en una sola página. Las secciones sin contenido no aparecen.
-const [{ projects, ok }, site] = await Promise.all([getProjects(), getSite()])
+const [{ projects, ok }, site, github] = await Promise.all([getProjects(), getSite(), getGithub()])
 if (ok) Astro.response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=300')
 const p = site.portfolio
 
@@ -38,6 +40,25 @@ const links = [
   hasContact && { id: 'contacto', label: 'Contacto' },
 ].filter((l) => !!l)
 
+// Lo que la terminal sabe responder: los mismos datos de la página.
+const terminal: TerminalData = {
+  name,
+  role,
+  location: p.location,
+  available: p.available ? p.availableNote || 'Disponible para nuevos proyectos' : '',
+  avatar: p.avatarUrl,
+  ai: site.ai,
+  skills: site.skills,
+  projects: projects.map((x) => ({ title: x.title, slug: x.slug, summary: x.summary, year: x.year, tags: x.tags.map((t) => t.name), private: !x.url })),
+  journey: p.journey,
+  services: p.services,
+  socials: site.socials.map((s) => ({ label: s.label || SOCIAL_ICONS[s.kind]?.label || s.kind, url: s.url })),
+  email,
+  cvHref: p.cvHref,
+  sections: [...links, ...(github ? [{ id: 'actividad', label: 'Actividad' }] : [])],
+  github: github && { user: github.user, total: github.total },
+}
+
 // Las cifras son círculos de tamaños distintos, no una fila de tarjetas iguales.
 const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:size-40 -mt-4', 'size-32 sm:size-36 mt-6', 'size-36 -mt-2', 'size-32 mt-4']
 ---
@@ -45,7 +66,7 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
 <Base fullTitle={`${name} | ${role || 'Portafolio'}`} description={p.intro || p.headline || site.tagline} image={p.avatarUrl}>
   <Nav client:load name={name} links={links} />
 
-  <header id="inicio" class="grid items-center gap-12 pt-28 pb-16 sm:pt-36 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-8 lg:pb-24">
+  <header id="inicio" class="grid items-center gap-12 pt-28 pb-16 sm:pt-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12 lg:pb-24">
     <div>
       {(p.available || p.location) && (
         <p class="text-dim flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
@@ -86,7 +107,7 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
       </div>
       {site.socials.length > 0 && <div class="mt-8"><SocialLinks socials={site.socials} /></div>}
     </div>
-    <Orbit avatar={p.avatarUrl} name={name} skills={skills} />
+    <Terminal client:load data={terminal} />
   </header>
 
   <main class="space-y-28 sm:space-y-40">
@@ -112,7 +133,7 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
     {skills.length > 0 && (
       <section id="habilidades" class="scroll-mt-24">
         <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Habilidades</h2>
-        <div class="mt-6"><SkillPyramid client:visible groups={site.skills} /></div>
+        <div class="mt-6"><SkillSystem client:visible groups={site.skills} /></div>
       </section>
     )}
 
@@ -158,6 +179,13 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
             ))}
           </ul>
         )}
+      </section>
+    )}
+
+    {github && (
+      <section id="actividad" class="scroll-mt-24">
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Actividad</h2>
+        <div class="mt-8"><Activity client:visible data={github} /></div>
       </section>
     )}
 
