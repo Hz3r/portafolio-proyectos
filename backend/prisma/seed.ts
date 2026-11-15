@@ -2,7 +2,7 @@ import 'dotenv/config'
 import argon2 from 'argon2'
 import { createDb } from '../src/db.ts'
 
-// Crea el usuario administrador inicial a partir de ADMIN_EMAIL y ADMIN_PASSWORD.
+// Crea o actualiza el usuario administrador a partir de ADMIN_EMAIL y ADMIN_PASSWORD.
 const email = process.env.ADMIN_EMAIL?.trim().toLowerCase()
 const password = process.env.ADMIN_PASSWORD
 if (!email || !password) {
@@ -15,11 +15,23 @@ if (password.length < 8) {
 }
 
 const db = createDb(process.env.DATABASE_URL ?? '')
-// Solo crea el administrador la primera vez: después el correo y la contraseña se cambian desde el panel.
-if ((await db.adminUser.count()) > 0) {
-  console.log('Ya existe un administrador; no se modifica.')
-} else {
+// Sincroniza el administrador con ADMIN_EMAIL y ADMIN_PASSWORD en cada release:
+// si no hay ninguno lo crea; si ya existe, actualiza correo y contraseña cuando difieren.
+const existing = await db.adminUser.findFirst({ orderBy: { createdAt: 'asc' } })
+if (!existing) {
   await db.adminUser.create({ data: { email, passwordHash: await argon2.hash(password) } })
   console.log(`Administrador creado: ${email}`)
+} else {
+  const sameEmail = existing.email === email
+  const samePassword = await argon2.verify(existing.passwordHash, password)
+  if (sameEmail && samePassword) {
+    console.log('Administrador al día con las variables de entorno.')
+  } else {
+    await db.adminUser.update({
+      where: { id: existing.id },
+      data: { email, passwordHash: samePassword ? existing.passwordHash : await argon2.hash(password) },
+    })
+    console.log(`Administrador actualizado: ${email}`)
+  }
 }
 await db.$disconnect()
