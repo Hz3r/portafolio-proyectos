@@ -1,5 +1,6 @@
 ---
 import Cover from '../Cover'
+import Sprite from '../Sprite'
 import SocialLinks from '../SocialLinks.astro'
 import TagBadge from '../TagBadge'
 import Journey from '../portfolio/Journey'
@@ -59,17 +60,22 @@ const terminal: TerminalData = {
   github: github && { user: github.user, total: github.total },
 }
 
-// Las cifras son círculos de tamaños distintos, no una fila de tarjetas iguales.
-const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:size-40 -mt-4', 'size-32 sm:size-36 mt-6', 'size-36 -mt-2', 'size-32 mt-4']
+// Barras de la ficha: cuántas tecnologías hay en cada área, en proporción a la mayor.
+const SEGMENTS = 10
+const largest = Math.max(1, ...site.skills.map((g) => g.tags.length))
+const areas = site.skills
+  .map((g) => ({ name: g.group || 'Otras', count: g.tags.length, filled: Math.max(1, Math.round((g.tags.length / largest) * SEGMENTS)) }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 6)
 ---
 
 <Base fullTitle={`${name} | ${role || 'Portafolio'}`} description={p.intro || p.headline || site.tagline} image={p.avatarUrl}>
   <Nav client:load name={name} links={links} />
 
-  <header id="inicio" class="grid items-center gap-12 pt-28 pb-16 sm:pt-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12 lg:pb-24">
-    <div>
+  <header id="inicio" class="grid grid-cols-1 items-center gap-10 pt-28 pb-16 sm:pt-36 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-14 lg:pb-24">
+    <div class="min-w-0">
       {(p.available || p.location) && (
-        <p class="text-dim flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        <p class="text-dim flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {p.available && (
             <span class="border-accent/40 text-ink flex items-center gap-2.5 rounded-full border py-1.5 pr-3.5 pl-3">
               <span class="pulse-dot" aria-hidden="true"></span>
@@ -84,12 +90,24 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
           )}
         </p>
       )}
-      <h1 class="mt-6 text-[3.25rem] leading-[0.95] font-semibold tracking-tighter text-balance sm:text-7xl lg:text-[5.5rem]">
+
+      {/* El tamaño del nombre se adapta: uno largo no ocupa media pantalla. */}
+      <h1 class="mt-6 text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1] font-semibold tracking-tighter text-balance">
         {name}<span class="cursor-blink" aria-hidden="true"></span>
       </h1>
-      {role && <p class="text-dim mt-4 text-2xl leading-tight tracking-tight sm:text-3xl">{role}</p>}
-      {p.headline && <p class="mt-7 max-w-xl text-xl leading-snug text-pretty sm:text-2xl">{p.headline}</p>}
-      {p.intro && <p class="text-dim mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-pretty">{p.intro}</p>}
+      {role && (
+        <p class="mt-4 flex items-baseline gap-2.5 font-mono text-lg sm:text-xl">
+          <span class="text-accent" aria-hidden="true">&gt;</span>
+          {role}
+        </p>
+      )}
+
+      {(p.headline || p.intro) && (
+        <div class="border-line mt-7 max-w-xl border-l pl-5">
+          {p.headline && <p class="text-xl leading-snug text-pretty sm:text-[1.375rem]">{p.headline}</p>}
+          {p.intro && <p class:list={['text-dim line-clamp-4 leading-relaxed text-pretty', p.headline && 'mt-3']}>{p.intro}</p>}
+        </div>
+      )}
 
       <div class="mt-9 flex flex-wrap items-center gap-3">
         <a href={ROUTES.projects} class="bg-accent text-bg rounded-full px-6 py-3 font-medium transition-transform hover:scale-[1.03] active:scale-[0.98]">
@@ -105,27 +123,87 @@ const bubble = ['size-40 sm:size-44', 'size-32 sm:size-36 mt-10', 'size-36 sm:si
           </a>
         )}
       </div>
-      {site.socials.length > 0 && <div class="mt-8"><SocialLinks socials={site.socials} /></div>}
+      {site.socials.length > 0 && <div class="mt-7"><SocialLinks socials={site.socials} /></div>}
     </div>
-    <Terminal client:load data={terminal} />
+    <div class="min-w-0"><Terminal client:load data={terminal} /></div>
   </header>
 
   <main class="space-y-28 sm:space-y-40">
     {hasAbout && (
       <section id="sobre-mi" class="scroll-mt-24">
         <h2 class="text-3xl font-semibold tracking-tight sm:text-5xl">Sobre mí</h2>
-        <div class="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
-          {about ? <div class="prose-project" set:html={about} /> : <div />}
-          {p.stats.length > 0 && (
-            <dl class="flex max-w-md flex-wrap content-start justify-center gap-3 lg:max-w-[23rem] lg:justify-end">
-              {p.stats.map((s, i) => (
-                <div class:list={['border-line bg-surface/60 flex shrink-0 flex-col items-center justify-center rounded-full border px-4 text-center backdrop-blur-sm', bubble[i % bubble.length], i === 0 && 'border-accent/50']}>
-                  <dd class="text-4xl font-semibold tracking-tighter tabular-nums sm:text-5xl">{s.value}</dd>
-                  <dt class="text-dim mt-1.5 text-sm leading-tight text-balance">{s.label}</dt>
+        <div class="mt-8 grid gap-8 lg:grid-cols-[19rem_minmax(0,1fr)] lg:items-start lg:gap-14">
+          {/* Ficha de personaje: quién soy de un vistazo. */}
+          <aside class="border-line bg-surface/60 rounded-[1.75rem] border p-5 backdrop-blur-sm lg:sticky lg:top-24" aria-label={`Ficha de ${name}`}>
+            <div class="flex items-center gap-4 lg:block">
+              <div class="select-frame on w-24 shrink-0 lg:mx-2 lg:mt-2 lg:w-auto">
+                <div class="bg-bg border-line flex aspect-square items-center justify-center overflow-hidden rounded-2xl border">
+                  {p.avatarUrl ? (
+                    <img src={p.avatarUrl} alt={`Foto de ${name}`} loading="lazy" class="h-full w-full object-cover" />
+                  ) : (
+                    <Sprite kind="robot" size={72} />
+                  )}
                 </div>
-              ))}
-            </dl>
-          )}
+              </div>
+              <div class="min-w-0 lg:mt-6">
+                <p class="text-lg leading-tight font-semibold tracking-tight">{name}</p>
+                {role && <p class="text-dim mt-1 font-mono text-sm">{role}</p>}
+              </div>
+            </div>
+
+            {(p.location || p.available) && (
+              <dl class="border-line mt-5 space-y-2.5 border-t pt-4 text-sm">
+                {p.location && (
+                  <div class="flex items-baseline justify-between gap-4">
+                    <dt class="pixel text-dim shrink-0">Base</dt>
+                    <dd class="min-w-0 text-right">{p.location}</dd>
+                  </div>
+                )}
+                {p.available && (
+                  <div class="flex items-baseline justify-between gap-4">
+                    <dt class="pixel text-dim shrink-0">Estado</dt>
+                    <dd class="flex min-w-0 items-center gap-2 text-right">
+                      <span class="pulse-dot shrink-0" aria-hidden="true"></span>
+                      {p.availableNote || 'Disponible'}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            )}
+
+            {areas.length > 0 && (
+              <div class="border-line mt-5 border-t pt-4">
+                <p class="pixel text-dim">Tecnologías por área</p>
+                <ul class="mt-3 space-y-2.5">
+                  {areas.map((a, i) => (
+                    <li class:list={['grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm', i >= 4 && 'max-lg:hidden']}>
+                      <span class="truncate">{a.name}</span>
+                      <span class="pixel text-accent">{a.count}</span>
+                      <span class="col-span-2 flex gap-[3px]" aria-hidden="true">
+                        {Array.from({ length: SEGMENTS }, (_, i) => (
+                          <span class:list={['h-2 flex-1', i < a.filled ? 'bg-accent' : 'bg-line']} />
+                        ))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+
+          <div class="min-w-0">
+            {about && <div class="prose-project text-[1.0625rem] sm:text-lg sm:leading-relaxed" set:html={about} />}
+            {p.stats.length > 0 && (
+              <dl class:list={['border-line bg-surface/60 grid grid-cols-2 overflow-hidden rounded-[1.75rem] border backdrop-blur-sm', about && 'mt-10', p.stats.length >= 3 && 'sm:grid-cols-3']}>
+                {p.stats.map((s, i) => (
+                  <div class="border-line -mt-px -ml-px flex flex-col border-t border-l px-5 py-5 sm:px-6 sm:py-6">
+                    <dd class:list={['order-1 text-4xl font-semibold tracking-tighter tabular-nums sm:text-5xl', i === 0 && 'text-accent']}>{s.value}</dd>
+                    <dt class="text-dim order-2 mt-2 text-sm leading-snug text-balance">{s.label}</dt>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
         </div>
       </section>
     )}

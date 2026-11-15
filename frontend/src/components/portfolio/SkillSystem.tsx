@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { type SkillGroup, type Tag, tagHref } from '../../lib/api'
 import Sprite from '../Sprite'
 import { TagIcon } from '../TagBadge'
@@ -36,17 +36,27 @@ function Chip({ tag }: { tag: Tag }) {
 /** Habilidades como un sistema de órbitas por nivel de dominio, o como lista por área. */
 export default function SkillSystem({ groups }: { groups: SkillGroup[] }) {
   const [view, setView] = useState<View>('nivel')
-  const [picked, setPicked] = useState<Tag | null>(null)
+  // Pasar el cursor muestra el detalle un momento; un clic lo deja fijo.
+  const [hover, setHover] = useState<Tag | null>(null)
+  const [pinned, setPinned] = useState<Tag | null>(null)
   const [paused, setPaused] = useState(false)
+  const reader = useRef<HTMLDivElement>(null)
   const all = groups.flatMap((g) => g.tags)
   const groupOf = (tag: Tag) => groups.find((g) => g.tags.some((t) => t.id === tag.id))?.group || 'Otras'
-  const ring = picked ? RINGS.find((r) => r.level === levelOf(picked)) : null
+  const shown = hover ?? pinned
+  const ring = shown ? RINGS.find((r) => r.level === levelOf(shown)) : null
+  const pin = (tag: Tag) => {
+    const next = pinned?.id === tag.id ? null : tag
+    setPinned(next)
+    // En celular el detalle queda debajo del sistema: lo acerca a la vista.
+    if (next && matchMedia('(max-width: 1023px)').matches) requestAnimationFrame(() => reader.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }))
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-dim max-w-md text-sm">
-          {view === 'nivel' ? 'Cuanto más cerca del centro, más la domino. Toca una para ver el detalle.' : 'Las que llevan un número se usan en proyectos publicados: tócalas para verlos.'}
+          {view === 'nivel' ? 'Cuanto más cerca del centro, más la domino. Haz clic en un planeta para dejar su detalle a la vista.' : 'Las que llevan un número se usan en proyectos publicados: tócalas para verlos.'}
         </p>
         <div role="tablist" aria-label="Cómo ordenar las habilidades" className="border-line flex rounded-full border p-1">
           {(['nivel', 'area'] as View[]).map((v) => (
@@ -70,9 +80,11 @@ export default function SkillSystem({ groups }: { groups: SkillGroup[] }) {
           {/* Los planetas giran sobre cuadrados rotados que sobresalen: el contenedor los recorta para no ensanchar la página. */}
           <div className="-mx-5 overflow-hidden px-5 py-7 sm:mx-0 sm:px-7">
             <div
-              className={`skill-system relative mx-auto aspect-square w-full max-w-[36rem] ${paused || picked ? 'paused' : ''}`}
+              className={`skill-system relative mx-auto aspect-square w-full max-w-[36rem] ${paused || hover ? 'paused' : ''}`}
               onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => (setPaused(false), setPicked(null))}
+              onMouseLeave={() => (setPaused(false), setHover(null))}
+              // Un clic en el espacio vacío suelta el planeta fijado.
+              onClick={(e) => !(e.target as HTMLElement).closest('button') && setPinned(null)}
             >
               {RINGS.map((r) => (
                 <div key={r.level} className={`absolute rounded-full border ${r.inset} ${r.line}`} aria-hidden="true" />
@@ -84,7 +96,8 @@ export default function SkillSystem({ groups }: { groups: SkillGroup[] }) {
               {RINGS.flatMap((r, ringIndex) => {
                 const tags = all.filter((t) => levelOf(t) === r.level)
                 return tags.map((tag, i) => {
-                  const on = picked?.id === tag.id
+                  const on = shown?.id === tag.id
+                  const fixed = pinned?.id === tag.id
                   return (
                     <span
                       key={tag.id}
@@ -94,14 +107,16 @@ export default function SkillSystem({ groups }: { groups: SkillGroup[] }) {
                       <span>
                         <button
                           type="button"
-                          onMouseEnter={() => setPicked(tag)}
-                          onFocus={() => setPicked(tag)}
-                          onClick={() => setPicked(tag)}
+                          onMouseEnter={() => setHover(tag)}
+                          onMouseLeave={() => setHover(null)}
+                          onFocus={() => setHover(tag)}
+                          onBlur={() => setHover(null)}
+                          onClick={() => pin(tag)}
                           aria-label={`${tag.name}: ${r.label.toLowerCase()}`}
-                          aria-pressed={on}
+                          aria-pressed={fixed}
                           className={`bg-bg flex size-10 items-center justify-center rounded-full border transition-[border-color,scale] sm:size-12 ${
-                            on ? 'border-accent scale-125' : r.level === 3 ? 'border-accent/50' : 'border-line'
-                          }`}
+                            on ? 'border-accent scale-125' : fixed ? 'border-accent scale-110' : r.level === 3 ? 'border-accent/50' : 'border-line'
+                          } ${fixed ? 'shadow-[0_0_0_4px_rgb(158_255_90/0.18),0_0_24px_rgb(158_255_90/0.45)]' : ''}`}
                         >
                           {tag.iconUrl || tag.iconPath ? <TagIcon tag={tag} size={20} /> : <span className="pixel text-dim">{tag.name.slice(0, 2)}</span>}
                         </button>
@@ -115,23 +130,41 @@ export default function SkillSystem({ groups }: { groups: SkillGroup[] }) {
 
           <div>
             {/* Lector: el detalle de la habilidad elegida. */}
-            <div className="border-line bg-surface/60 min-h-[9.5rem] rounded-[1.75rem] border p-5 backdrop-blur-sm" aria-live="polite">
-              {picked && ring ? (
+            <div
+              ref={reader}
+              className={`bg-surface/60 min-h-[11.5rem] scroll-mb-24 rounded-[1.75rem] border p-5 backdrop-blur-sm transition-colors ${pinned && shown?.id === pinned.id ? 'border-accent/50' : 'border-line'}`}
+              aria-live="polite"
+            >
+              {shown && ring ? (
                 <>
-                  <p className="flex items-center gap-2.5 text-xl font-semibold tracking-tight">
-                    <TagIcon tag={picked} size={22} />
-                    {picked.name}
-                  </p>
-                  <p className="text-dim mt-2 text-sm">
-                    {ring.label.replace(/^Las /, 'La ')}, en {groupOf(picked)}
-                  </p>
-                  {picked.projectCount ? (
-                    <a href={tagHref(picked)} className="text-accent mt-3 inline-block font-medium underline decoration-1 underline-offset-4">
-                      Ver {picked.projectCount === 1 ? 'el proyecto' : `los ${picked.projectCount} proyectos`} con {picked.name}
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="flex min-w-0 items-center gap-2.5 text-xl font-semibold tracking-tight">
+                      <TagIcon tag={shown} size={22} />
+                      {shown.name}
+                    </p>
+                    {pinned?.id === shown.id && (
+                      <button type="button" onClick={() => setPinned(null)} className="pixel text-dim hover:text-accent -mt-1 -mr-1 shrink-0 rounded-full px-2 py-2 transition-colors">
+                        Soltar
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="flex gap-1" aria-hidden="true">
+                      {[1, 2, 3].map((n) => (
+                        <span key={n} className={`h-2.5 w-6 ${n <= ring.level ? 'bg-accent' : 'bg-line'}`} />
+                      ))}
+                    </span>
+                    <span className="text-sm">{ring.label.replace(/^Las /, 'La ')}</span>
+                  </div>
+                  <p className="text-dim mt-2 text-sm">Área: {groupOf(shown)}</p>
+                  {shown.projectCount ? (
+                    <a href={tagHref(shown)} className="text-accent mt-3 inline-block font-medium underline decoration-1 underline-offset-4">
+                      Ver {shown.projectCount === 1 ? 'el proyecto' : `los ${shown.projectCount} proyectos`} con {shown.name}
                     </a>
                   ) : (
                     <p className="text-dim mt-3 text-sm">Todavía sin proyectos publicados.</p>
                   )}
+                  {pinned?.id !== shown.id && <p className="pixel text-dim mt-4">Clic para fijarla</p>}
                 </>
               ) : (
                 <>
