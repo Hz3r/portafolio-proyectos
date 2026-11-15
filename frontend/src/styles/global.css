@@ -107,6 +107,7 @@
     background-repeat: no-repeat;
     filter: drop-shadow(0 0 6px rgb(158 255 90 / 0.55));
   }
+  .select-frame.on::after,
   .card:hover .select-frame::after,
   .card:focus-visible .select-frame::after {
     opacity: 1;

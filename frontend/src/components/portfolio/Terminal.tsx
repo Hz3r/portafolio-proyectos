@@ -494,10 +494,11 @@ export default function Terminal({ data }: { data: TerminalData }) {
             )}
           </div>
 
-          <div className="border-line flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-t px-4 py-2.5 sm:px-5">
-            <ul className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 [scrollbar-width:none] max-sm:basis-full" aria-label="Comandos rápidos">
+          {/* Los comandos rápidos pasan a otra línea si no caben: así todos quedan al alcance. */}
+          <div className="border-line flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border-t px-4 py-2.5 sm:px-5">
+            <ul className="flex min-w-0 flex-wrap gap-1" aria-label="Comandos rápidos">
               {quick.map((c) => (
-                <li key={c} className="shrink-0">
+                <li key={c}>
                   <button type="button" disabled={busy || intro !== null} onClick={() => exec(c)} className="border-line text-dim hover:border-accent hover:text-accent rounded-full border px-2.5 py-1 font-mono text-xs transition-colors disabled:opacity-50">
                     {c}
                   </button>

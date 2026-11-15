@@ -123,20 +123,23 @@ export default function SoundToggle() {
       onClick={toggle}
       aria-pressed={on}
       aria-label={on ? 'Apagar música y sonidos' : 'Encender música y sonidos'}
-      className={`pixel bg-surface/85 fixed right-4 bottom-4 z-30 flex items-center gap-2.5 rounded-full border px-3.5 py-3 backdrop-blur transition-colors ${
+      title={on ? 'Sonido encendido' : 'Sonido apagado'}
+      className={`bg-surface/85 fixed right-4 bottom-4 z-30 flex size-11 items-center justify-center rounded-full border backdrop-blur transition-colors ${
         on ? 'border-accent text-accent' : 'border-line text-dim hover:text-ink'
       }`}
     >
-      <span className="flex h-3 items-end gap-[2px]" aria-hidden="true">
-        {[0.5, 1, 0.7].map((h, i) => (
-          <span
-            key={i}
-            className="w-[3px] origin-bottom bg-current"
-            style={{ height: `${h * 100}%`, animation: on ? `eq 0.9s ${i * 0.18}s steps(4) infinite alternate` : undefined }}
-          />
-        ))}
-      </span>
-      {on ? 'Sonido' : 'Sin sonido'}
+      {/* Altavoz en pixel art: con ondas si suena, tachado si está en silencio. */}
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">
+        <path d="M2 7h4v6H2zM6 6h2v8H6zM8 4h2v12H8z" />
+        {on ? (
+          <>
+            <path d="M12 8h2v4h-2z" />
+            <path d="M15 5h2v10h-2z" style={{ animation: 'eq 0.9s steps(3) infinite alternate', transformOrigin: 'center', transformBox: 'fill-box' }} />
+          </>
+        ) : (
+          <path d="M12 7h2v2h-2zM16 7h2v2h-2zM14 9h2v2h-2zM12 11h2v2h-2zM16 11h2v2h-2z" />
+        )}
+      </svg>
     </button>
   )
 }
