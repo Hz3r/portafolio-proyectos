@@ -133,8 +133,10 @@ genera en el navegador (Web Audio), sin archivos de audio.
 - **Google Analytics 4**: define `GA_MEASUREMENT_ID` con el ID `G-XXXXXXX` de tu
   propiedad. Sin esa variable no se carga ningún script de Google. Las vistas
   también se envían al navegar entre secciones, no solo al abrir la página.
-- **Search Console**: añade tu dominio en search.google.com/search-console,
-  verifícalo y envía `https://tu-dominio.com/sitemap.xml`.
+- **Search Console**: añade tu dominio en search.google.com/search-console y
+  verifícalo con el método de etiqueta HTML: pon el valor de `content` en la
+  variable `GOOGLE_SITE_VERIFICATION` del servicio `frontend`. Después envía
+  `https://tu-dominio.com/sitemap.xml`.
 
 ## Desarrollo local
 
