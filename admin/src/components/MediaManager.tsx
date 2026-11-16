@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirm } from './Dialogs'
 import { rectSortingStrategy } from '@dnd-kit/sortable'
 import { useRef, useState } from 'react'
 import { addMedia, deleteMedia, presignUpload, reorderMedia, updateMedia, updateProject } from '@/app/actions'
@@ -28,6 +29,8 @@ export default function MediaManager({
   setCoverId: SetState<string | null>
 }) {
   const [uploads, setUploads] = useState<Upload[]>([])
+  const confirm = useConfirm()
+
   const [error, setError] = useState<string | null>(null)
   const [over, setOver] = useState(false)
   const [embed, setEmbed] = useState('')
@@ -99,7 +102,7 @@ export default function MediaManager({
   }
 
   const remove = async (m: Media) => {
-    if (!confirm('¿Borrar este archivo? No se puede deshacer.')) return
+    if (!(await confirm({ title: '¿Borrar este archivo?', body: 'Se borra del proyecto y del almacenamiento. No se puede deshacer.', action: 'Borrar archivo', danger: true }))) return
     const res = await deleteMedia(m.id)
     if (!res.ok) return setError(res.error)
     const rest = media.filter((x) => x.id !== m.id)

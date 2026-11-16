@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirm } from './Dialogs'
 import { useState } from 'react'
 import { deleteTag } from '@/app/actions'
 import type { IconHit } from '@/lib/icons'
@@ -10,6 +11,8 @@ import { TagIcon } from './ui'
 const sorted = (list: Tag[]) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
 export default function TagManager({ initial, featured, total }: { initial: Tag[]; featured: IconHit[]; total: number }) {
+  const confirm = useConfirm()
+
   const [tags, setTags] = useState(initial)
   const [editing, setEditing] = useState<Tag | null>(null)
   const [formKey, setFormKey] = useState(0)
@@ -21,8 +24,8 @@ export default function TagManager({ initial, featured, total }: { initial: Tag[
   const resetForm = () => (setEditing(null), setFormKey((k) => k + 1))
 
   const remove = async (t: Tag) => {
-    const used = t.projectCount ? ` Se quitará de ${t.projectCount} ${t.projectCount === 1 ? 'proyecto' : 'proyectos'}.` : ''
-    if (!confirm(`¿Borrar la etiqueta “${t.name}”?${used}`)) return
+    const used = t.projectCount ? `Se quitará de ${t.projectCount} ${t.projectCount === 1 ? 'proyecto' : 'proyectos'}.` : 'No está en ningún proyecto.'
+    if (!(await confirm({ title: `¿Borrar la etiqueta “${t.name}”?`, body: used, action: 'Borrar etiqueta', danger: true }))) return
     const res = await deleteTag(t.id)
     if (!res.ok) return setError(res.error)
     setTags((list) => list.filter((x) => x.id !== t.id))

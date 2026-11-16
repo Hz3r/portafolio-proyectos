@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirm } from './Dialogs'
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import Link from 'next/link'
@@ -70,6 +71,8 @@ export default function ProjectEditor({
   iconTotal: number
 }) {
   const [allTags, setAllTags] = useState(initialTags)
+  const confirm = useConfirm()
+
   const [tagQuery, setTagQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [saved, setSaved] = useState(() => toForm(project))
@@ -140,8 +143,8 @@ export default function ProjectEditor({
     })
   }
 
-  const remove = () => {
-    if (!confirm(`¿Borrar “${saved.title}” con todas sus imágenes y videos? No se puede deshacer.`)) return
+  const remove = async () => {
+    if (!(await confirm({ title: `¿Borrar “${saved.title}”?`, body: 'Se borran el proyecto, sus imágenes y sus videos. No se puede deshacer.', action: 'Borrar proyecto', danger: true }))) return
     startTransition(async () => {
       const res = await deleteProject(project.id)
       if (res && !res.ok) setMessage({ kind: 'error', text: res.error })

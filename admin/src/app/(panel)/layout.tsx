@@ -1,4 +1,5 @@
 import { logout } from '@/app/actions'
+import { DialogProvider } from '@/components/Dialogs'
 import NavLinks from '@/components/NavLinks'
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -31,7 +32,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </form>
         </div>
       </aside>
-      <div className="mx-auto w-full max-w-6xl px-5 pb-28 sm:px-8">{children}</div>
+      <DialogProvider>
+        <div className="mx-auto w-full max-w-6xl px-5 pb-28 sm:px-8">{children}</div>
+      </DialogProvider>
     </div>
   )
 }

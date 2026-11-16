@@ -418,6 +418,24 @@ export default function Terminal({ data }: { data: TerminalData }) {
     }
   }
 
+  // La rueda del ratón mueve la fila de comandos en horizontal. Con un listener nativo no pasivo se puede
+  // evitar que la página baje mientras la fila tiene margen; al llegar al final, la página vuelve a bajar.
+  const chips = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    const el = chips.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
+      const room = el.scrollWidth - el.clientWidth
+      const canMove = (e.deltaY > 0 && el.scrollLeft < room - 1) || (e.deltaY < 0 && el.scrollLeft > 0)
+      if (!canMove) return
+      e.preventDefault()
+      el.scrollLeft += e.deltaY
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [state])
+
   if (state === 'closed') {
     return (
       <div className="flex min-h-40 items-center justify-center">
@@ -494,18 +512,22 @@ export default function Terminal({ data }: { data: TerminalData }) {
             )}
           </div>
 
-          {/* Los comandos rápidos pasan a otra línea si no caben: así todos quedan al alcance. */}
-          <div className="border-line flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border-t px-4 py-2.5 sm:px-5">
-            <ul className="flex min-w-0 flex-wrap gap-1" aria-label="Comandos rápidos">
+          {/* Una sola fila horizontal: se desliza con la rueda, con la barra o al tocar. En celular ocupa todo el ancho y el selector baja. */}
+          <div className="border-line flex shrink-0 items-center gap-3 border-t px-4 py-2.5 max-sm:flex-wrap sm:px-5">
+            <ul
+              ref={chips}
+              className="flex min-w-0 flex-1 gap-1 overflow-x-auto overscroll-x-contain py-1 [scrollbar-color:var(--color-line)_transparent] [scrollbar-width:thin] max-sm:basis-full"
+              aria-label="Comandos rápidos"
+            >
               {quick.map((c) => (
-                <li key={c}>
+                <li key={c} className="shrink-0">
                   <button type="button" disabled={busy || intro !== null} onClick={() => exec(c)} className="border-line text-dim hover:border-accent hover:text-accent rounded-full border px-2.5 py-1 font-mono text-xs transition-colors disabled:opacity-50">
                     {c}
                   </button>
                 </li>
               ))}
             </ul>
-            <div role="radiogroup" aria-label="Sistema de las ventanas" className="border-line flex shrink-0 rounded-full border p-0.5">
+            <div role="radiogroup" aria-label="Sistema de las ventanas" className="border-line flex shrink-0 self-center rounded-full border p-0.5">
               {OS.map((o: Os) => (
                 <button
                   key={o}

@@ -1,5 +1,6 @@
 import type { Project } from '../lib/api'
 import { stillOf } from '../lib/api'
+import FitImage from './FitImage'
 
 /** Portada de un proyecto, o un patrón pixel con sus iniciales si no tiene imagen. */
 export default function Cover({ project, eager = false }: { project: Project; eager?: boolean }) {
@@ -25,12 +26,6 @@ export default function Cover({ project, eager = false }: { project: Project; ea
     )
   }
   return (
-    <img
-      src={src}
-      alt={project.cover?.alt || ''}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-      className="cover-img h-full w-full object-cover"
-    />
+    <FitImage src={src} alt={project.cover?.alt || ''} loading={eager ? 'eager' : 'lazy'} imgClassName="cover-img" />
   )
 }

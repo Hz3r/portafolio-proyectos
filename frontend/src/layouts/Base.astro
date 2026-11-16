@@ -6,7 +6,7 @@ import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
 import SoundToggle from '../components/SoundToggle'
 import Roamers from '../components/Roamers'
-import { getSite } from '../lib/server'
+import { getSite, siteOrigin } from '../lib/server'
 
 interface Props {
   title?: string
@@ -14,11 +14,38 @@ interface Props {
   image?: string | null
   /** Título completo, sin añadir el usuario. */
   fullTitle?: string
+  /** Páginas que no deben aparecer en buscadores (por ejemplo, la 404). */
+  noindex?: boolean
 }
 
 const site = await getSite()
-const { title, description = site.tagline, image } = Astro.props
+const { title, description = site.tagline, image, noindex = false } = Astro.props
 const fullTitle = Astro.props.fullTitle ? Astro.props.fullTitle : title ? `${title} | ${site.handle}` : `${site.handle} | Proyectos`
+
+const origin = siteOrigin(Astro.url)
+const canonical = `${origin}${Astro.url.pathname}`
+
+// Google Analytics: solo se activa si GA_MEASUREMENT_ID tiene formato G-XXXXXXX.
+const analyticsId = (process.env.GA_MEASUREMENT_ID ?? import.meta.env.GA_MEASUREMENT_ID ?? '').trim()
+const analytics = /^G-[A-Z0-9]{4,}$/i.test(analyticsId) ? analyticsId : ''
+
+// Datos estructurados: ayudan a que el buscador entienda quién está detrás del sitio.
+const portfolio = site.portfolio
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: site.handle, url: origin, inLanguage: 'es' },
+  ...(portfolio.name
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: portfolio.name,
+          jobTitle: portfolio.role || undefined,
+          url: origin,
+          sameAs: site.socials.filter((s) => s.url.startsWith('http')).map((s) => s.url),
+        },
+      ]
+    : []),
+]
 ---
 
 <!doctype html>
@@ -30,11 +57,35 @@ const fullTitle = Astro.props.fullTitle ? Astro.props.fullTitle : title ? `${tit
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={site.handle} />
+    <meta property="og:locale" content="es_419" />
     {image && <meta property="og:image" content={image} />}
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {analytics && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${analytics}`}></script>
+        <script is:inline define:vars={{ analytics }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          window.gtag = gtag;
+          gtag('js', new Date());
+          // Sin envío automático: las vistas se mandan abajo, también al navegar entre páginas.
+          gtag('config', analytics, { send_page_view: false });
+          document.addEventListener('astro:page-load', () =>
+            gtag('event', 'page_view', { page_location: location.href, page_path: location.pathname, page_title: document.title }),
+          );
+        </script>
+      </>
+    )}
     <ClientRouter />
   </head>
   <body>
