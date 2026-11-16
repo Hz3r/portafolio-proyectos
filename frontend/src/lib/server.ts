@@ -102,3 +102,9 @@ export const ownerOf = (site: Site): Owner => ({
   handle: site.handle,
   github: site.socials.find((s) => s.kind === 'github')?.url ?? null,
 })
+
+/** Origen público del sitio: PUBLIC_SITE_URL si está definido; si no, el de la petición. */
+export function siteOrigin(url?: URL): string {
+  const configured = (process.env.PUBLIC_SITE_URL ?? import.meta.env.PUBLIC_SITE_URL ?? '').trim().replace(/\/$/, '')
+  return configured || url?.origin || ''
+}

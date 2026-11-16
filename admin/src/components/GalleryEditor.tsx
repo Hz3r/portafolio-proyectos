@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirm } from './Dialogs'
 import { rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useRef, useState } from 'react'
 import { presignUpload } from '@/app/actions'
@@ -14,6 +15,8 @@ const uid = () => Math.random().toString(36).slice(2, 10)
 
 /** Galería del portafolio: categorías ordenables, cada una con sus imágenes. */
 export default function GalleryEditor({ value, onChange, onError }: { value: GalleryCategory[]; onChange: (next: GalleryCategory[]) => void; onError: (text: string) => void }) {
+  const confirm = useConfirm()
+
   const [name, setName] = useState('')
   const names = value.map((c) => c.name.trim().toLowerCase())
   const add = (raw: string) => {
@@ -44,9 +47,9 @@ export default function GalleryEditor({ value, onChange, onError }: { value: Gal
                     dragging={dragging}
                     onChange={(next) => patch(category.id, next)}
                     onError={onError}
-                    onRemove={() => {
+                    onRemove={async () => {
                       const n = category.items.length
-                      if (n && !confirm(`¿Quitar “${category.name}” con ${n === 1 ? 'su imagen' : `sus ${n} imágenes`}? Se borran al guardar.`)) return
+                      if (n && !(await confirm({ title: `¿Quitar “${category.name}”?`, body: `${n === 1 ? 'Su imagen se borra' : `Sus ${n} imágenes se borran`} al guardar los cambios.`, action: 'Quitar', danger: true }))) return
                       onChange(value.filter((c) => c.id !== category.id))
                     }}
                   />

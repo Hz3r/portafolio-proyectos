@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirm } from './Dialogs'
 import { verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useState } from 'react'
 import type { Media, Section } from '@/lib/types'
@@ -51,6 +52,8 @@ export default function StoryEditor({
   media: Media[]
 }) {
   const [closed, setClosed] = useState<Set<string>>(new Set())
+  const confirm = useConfirm()
+
   const patch = (id: string, next: Section) => onChange(sections.map((s) => (s.id === id ? next : s)))
   const toggle = (id: string) =>
     setClosed((set) => {
@@ -111,7 +114,7 @@ export default function StoryEditor({
                       <button
                         type="button"
                         className="text-dim hover:text-danger px-2 py-2 text-sm"
-                        onClick={() => confirm('¿Quitar este bloque?') && onChange(sections.filter((x) => x.id !== s.id))}
+                        onClick={async () => (await confirm({ title: '¿Quitar este bloque?', body: 'El contenido del bloque se pierde al guardar.', action: 'Quitar', danger: true })) && onChange(sections.filter((x) => x.id !== s.id))}
                       >
                         Quitar
                       </button>

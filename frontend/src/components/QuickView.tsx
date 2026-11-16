@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { Owner, Project, Section } from '../lib/api'
 import { excerpt, pad } from '../lib/api'
 import { Lock } from './ProjectGrid'
+import FitImage from './FitImage'
 import Roamers from './Roamers'
 import Sheet from './Sheet'
 import TagBadge from './TagBadge'
@@ -75,12 +76,7 @@ export default function QuickView({ project, owner, number, onClose }: { project
                 {slides.map((m, i) => (
                   <div key={m.id} className="aspect-[16/10] w-full shrink-0 snap-center">
                     {m.type === 'IMAGE' && (
-                      <img
-                        src={m.url!}
-                        alt={m.alt || `${project.title}, imagen ${i + 1}`}
-                        loading={i === 0 ? 'eager' : 'lazy'}
-                        className="h-full w-full object-cover"
-                      />
+                      <FitImage src={m.url!} alt={m.alt || `${project.title}, imagen ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} />
                     )}
                     {m.type === 'VIDEO' && (
                       <video

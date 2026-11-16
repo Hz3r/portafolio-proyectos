@@ -122,6 +122,20 @@ El sitio tiene un botón de sonido, apagado por defecto. Al encenderlo suena una
 música ambiental a bajo volumen y un efecto al tocar enlaces y botones. Todo se
 genera en el navegador (Web Audio), sin archivos de audio.
 
+## Buscadores y analítica
+
+- **Dirección pública**: define `PUBLIC_SITE_URL` en el servicio `frontend`
+  (por ejemplo `https://tu-dominio.com`, sin barra final). Se usa en el sitemap,
+  en `robots.txt` y en los enlaces canónicos.
+- **Sitemap y robots**: `/sitemap.xml` lista la portada, `/portafolio`,
+  `/proyectos` y cada proyecto publicado. `/robots.txt` permite todo y apunta al
+  sitemap. La página 404 y `/api/` no se indexan.
+- **Google Analytics 4**: define `GA_MEASUREMENT_ID` con el ID `G-XXXXXXX` de tu
+  propiedad. Sin esa variable no se carga ningún script de Google. Las vistas
+  también se envían al navegar entre secciones, no solo al abrir la página.
+- **Search Console**: añade tu dominio en search.google.com/search-console,
+  verifícalo y envía `https://tu-dominio.com/sitemap.xml`.
+
 ## Desarrollo local
 
 Necesitas Node 22 y Docker.
