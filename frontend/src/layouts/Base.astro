@@ -29,6 +29,9 @@ const canonical = `${origin}${Astro.url.pathname}`
 const analyticsId = (process.env.GA_MEASUREMENT_ID ?? import.meta.env.GA_MEASUREMENT_ID ?? '').trim()
 const analytics = /^G-[A-Z0-9]{4,}$/i.test(analyticsId) ? analyticsId : ''
 
+// Verificación de Google Search Console (método de etiqueta HTML). Solo el valor de content.
+const verification = (process.env.GOOGLE_SITE_VERIFICATION ?? import.meta.env.GOOGLE_SITE_VERIFICATION ?? '').trim()
+
 // Datos estructurados: ayudan a que el buscador entienda quién está detrás del sitio.
 const portfolio = site.portfolio
 const jsonLd = [
@@ -58,6 +61,7 @@ const jsonLd = [
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {verification && <meta name="google-site-verification" content={verification} />}
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
